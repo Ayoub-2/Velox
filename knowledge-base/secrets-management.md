@@ -52,3 +52,41 @@ A secret should only grant permissions for the specific task required.
 
 *   **Bad**: One "Master Key" used by all microservices.
 *   **Good**: Each service has its own key, with permission only to read its own S3 bucket.
+
+### Example: AWS IAM Policy
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::my-app-bucket/my-service-data/*"
+    }
+  ]
+}
+```
+
+### Storing Secrets in CI/CD
+```yaml
+# GitHub Actions Example
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to production
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: npm run deploy
+```
+
+### Never Log Secrets
+```javascript
+// BAD
+console.log('Connecting with key:', apiKey);
+
+// GOOD
+console.log('Connecting to API...');
+const result = await callApi(apiKey); // Key stays in memory, never logged
+```

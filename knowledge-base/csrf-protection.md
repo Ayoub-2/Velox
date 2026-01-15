@@ -27,3 +27,47 @@ When a user loads a form, generate a token:
 </form>
 ```
 On the server, match `req.body.csrf_token` with the token stored in the user's session.
+
+### Full Implementation (Express + session)
+```javascript
+import session from 'express-session';
+import csrf from 'csurf';
+import cookieParser from 'cookie-parser';
+
+app.use(cookieParser());
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true
+}));
+
+const csrfProtection = csrf({ cookie: false }); // Use session, not cookies
+
+// Form rendering
+app.get('/profile', csrfProtection, (req, res) => {
+  res.render('profile', { csrfToken: req.csrfToken() });
+});
+
+// Form submission
+app.post('/profile', csrfProtection, (req, res) => {
+  // If token doesn't match, middleware will reject
+  // Update user profile
+  res.json({ success: true });
+});
+```
+
+### SameSite Cookie Attribute (Modern Approach)
+SameSite cookies are the modern defense, making CSRF tokens less critical:
+
+```javascript
+res.cookie('session_id', sessionToken, {
+  sameSite: 'strict', // 'strict' | 'lax' | 'none'
+  httpOnly: true,
+  secure: true // HTTPS only
+});
+```
+
+**SameSite Values**:
+- `strict`: Cookie never sent in cross-site requests
+- `lax`: Cookie sent in top-level navigations (links, forms from other sites) but not subresources
+- `none`: Cookie always sent (requires Secure flag and HTTPS)

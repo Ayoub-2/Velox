@@ -80,3 +80,46 @@ createQueryBuilder("user").where("user.name = :name", { name });
 This occurs when malicious input is stored in the database (e.g., as a "nickname") and then later used unsafe in a different query.
 
 *   **Prevention**: Treat **all** data from the database as untrusted if it originated from user input. Always use parameterization, even when reading *from* the database to construct new queries.
+
+### Real-World Example
+```javascript
+// VULNERABLE: Malicious data stored, then used unsafely later
+const userName = 'John\'; DROP TABLE users; --';
+await prisma.user.create({ data: { name: userName } });
+
+// Later, a report queries it unsafely:
+const users = await db.query(
+  `SELECT * FROM users WHERE name = '${getUserFromDb()}'`
+);
+// Oops, the table is dropped!
+
+// FIX: Always parameterize
+const user = await db.query(
+  `SELECT * FROM users WHERE name = ?`,
+  [getUserFromDb()]
+);
+```
+
+## 5. Testing for SQL Injection
+
+```javascript
+// Test payloads to try during development
+const sqlInjectionTests = [
+  "' OR '1'='1",
+  "admin' --",
+  "' UNION SELECT NULL, NULL, NULL --",
+  "'; DROP TABLE users; --"
+];
+
+// These should all fail safely (parameterization)
+sqlInjectionTests.forEach(async (payload) => {
+  try {
+    await prisma.user.findFirst({
+      where: { username: payload }
+    });
+    console.log(`✓ Safe against: ${payload}`);
+  } catch (err) {
+    console.error(`✗ Vulnerable to: ${payload}`, err);
+  }
+});
+```

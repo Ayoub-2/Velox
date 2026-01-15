@@ -60,3 +60,59 @@ Attackers use lists of compromised username/password pairs from other breaches t
 *   **Rate Limiting**: Block IP addresses with too many failed attempts.
 *   **CAPTCHA**: Require human verification after failed attempts.
 *   **Breached Password Detection**: Check user passwords against known breach lists (e.g., HaveIBeenPwned API) during registration.
+
+### Implementation: Breached Password Check
+```javascript
+import axios from 'axios';
+import sha1 from 'sha1';
+
+async function isPasswordBreached(password) {
+  // Use HaveIBeenPwned Pwned Passwords API
+  const hash = sha1(password).toUpperCase();
+  const prefix = hash.substring(0, 5);
+  const suffix = hash.substring(5);
+
+  try {
+    const response = await axios.get(
+      `https://api.pwnedpasswords.com/range/${prefix}`,
+      { timeout: 5000 }
+    );
+
+    // Check if our suffix is in the response
+    const breached = response.data.includes(suffix);
+    return breached;
+  } catch (err) {
+    // On error, fail open (allow password) rather than blocking user
+    console.error('Breached password check failed:', err);
+    return false;
+  }
+}
+
+// During registration
+if (await isPasswordBreached(newPassword)) {
+  throw new Error('This password has been found in data breaches. Please choose another.');
+}
+```
+
+### Implementation: Rate Limiting
+```javascript
+import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
+import redis from 'redis';
+
+const redisClient = redis.createClient();
+
+const loginLimiter = rateLimit({
+  store: new RedisStore({
+    client: redisClient,
+    prefix: 'login-limit:'
+  }),
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 failed attempts
+  message: 'Too many login attempts, please try again later.'
+});
+
+app.post('/login', loginLimiter, async (req, res) => {
+  // Handle login
+});
+```

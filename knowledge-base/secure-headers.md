@@ -31,9 +31,61 @@ module.exports = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { 
+            key: 'Strict-Transport-Security', 
+            value: 'max-age=31536000; includeSubDomains; preload' 
+          },
+          { 
+            key: 'Content-Security-Policy', 
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' data:" 
+          },
+          { 
+            key: 'Permissions-Policy', 
+            value: 'camera=(), microphone=(), geolocation=()' 
+          }
         ],
       },
     ];
   },
 };
+```
+
+### Example (Express.js with helmet)
+```javascript
+import helmet from 'helmet';
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+    }
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
+  },
+  frameguard: {
+    action: 'deny'
+  }
+}));
+```
+
+## Testing Secure Headers
+
+```bash
+# Use curl to check headers
+curl -I https://your-app.com
+
+# Look for presence of:
+# Strict-Transport-Security
+# X-Content-Type-Options: nosniff
+# X-Frame-Options: DENY
+# Content-Security-Policy
+
+# Online tool
+# https://securityheaders.com
 ```
