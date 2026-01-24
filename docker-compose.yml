@@ -1,0 +1,50 @@
+services:
+  # Frontend (Next.js)
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - api
+
+  # Backend (FastAPI + Nuclei)
+  api:
+    build: ./orchestrator
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ZAP_URL=http://zap:8080
+    depends_on:
+      - redis
+      - zap
+    volumes:
+      - ./orchestrator:/app
+
+  # Worker (Celery)
+  worker:
+    build: ./orchestrator
+    command: celery -A celery_app worker --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - ZAP_URL=http://zap:8080
+    depends_on:
+      - redis
+      - zap
+    volumes:
+      - ./orchestrator:/app
+
+  # Job Queue Broker
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # DAST Tool: OWASP ZAP (Headless)
+  zap:
+    image: zaproxy/zap-stable
+    command: zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
+    ports:
+      - "8090:8080"

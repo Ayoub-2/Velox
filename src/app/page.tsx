@@ -38,7 +38,7 @@ export default function Home() {
           </Link>
 
           {/* DAST Orchestrator (Phase 2) */}
-          <div 
+          <div
             className="group relative rounded-2xl border border-slate-800 bg-slate-900/30 p-6 sm:p-8 opacity-60 cursor-not-allowed"
             aria-disabled="true"
           >
@@ -51,7 +51,7 @@ export default function Home() {
           </div>
 
           {/* Analytics (Phase 3) */}
-          <div 
+          <div
             className="group relative rounded-2xl border border-slate-800 bg-slate-900/30 p-6 sm:p-8 opacity-60 cursor-not-allowed"
             aria-disabled="true"
           >
@@ -67,18 +67,4 @@ export default function Home() {
     </main>
   );
 }
-              Real-time security posture dashboards and trend analysis.
-            </p>
-          </div>
-        </div>
 
-        <div className="mt-20 flex gap-8 opacity-50">
-          {/* Tech Stack Icons (Placeholders for now) */}
-          <div className="h-8 w-8 rounded-full bg-slate-700/50"></div>
-          <div className="h-8 w-8 rounded-full bg-slate-700/50"></div>
-          <div className="h-8 w-8 rounded-full bg-slate-700/50"></div>
-        </div>
-      </div>
-    </main>
-  );
-}

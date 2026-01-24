@@ -3,8 +3,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { StackProvider } from "@/lib/stack-context";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   display: 'swap',
   variable: '--font-inter'
@@ -33,11 +34,13 @@ export default function RootLayout({
         <meta name="theme-color" content="#0f172a" />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col bg-slate-900 text-white`}>
-        <Navbar />
-        <div className="flex-grow pt-16">
-          {children}
-        </div>
-        <Footer />
+        <StackProvider>
+          <Navbar />
+          <div className="flex-grow pt-16">
+            {children}
+          </div>
+          <Footer />
+        </StackProvider>
       </body>
     </html>
   );

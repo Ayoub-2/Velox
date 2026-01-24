@@ -31,26 +31,59 @@ The actual security articles (the content of the app) are located in the [knowle
 *   [Secrets Management](knowledge-base/secrets-management.md)
 *   ...and more.
 
-## Development
+## 🚀 Getting Started
 
-This is a [Next.js](https://nextjs.org) project designed to be run in a containerized environment.
+### Prerequisites
+- Node.js 18+
+- Docker & Docker Compose
 
-### 🐳 Running with Docker (Recommended)
+### Fast Start (Full Stack)
+The easiest way to run Velox (Frontend + DAST Engine) is via Docker Compose:
 
-Since this project relies on specific dependencies, using Docker is the primary supported workflow.
-
-**1. Build the Image**
 ```bash
-docker build -t velox-kb .
+docker-compose up --build
 ```
 
-**2. Run the Container**
-```bash
-docker run -p 3000:3000 velox-kb
-```
+Access the services:
+- **Web App**: http://localhost:3000
+- **DAST Dashboard**: http://localhost:3000/dast
+- **Orchestrator API**: http://localhost:8000/docs
+- **ZAP Proxy**: http://localhost:8090
 
-Access the application at [http://localhost:3000](http://localhost:3000).
+### Manual Development
+1.  **Frontend**:
+    ```bash
+    npm install
+    npm run dev
+    ```
+2.  **Backend (Orchestrator)**:
+    ```bash
+    cd orchestrator
+    pip install -r requirements.txt
+    uvicorn main:app --reload
+    ```
+    *(Note: Manual mode requires a local Redis instance)*
 
-### Development Notes
-*   **Adding Content**: Simply add a `.md` file to the `knowledge-base/` directory and rebuild the image.
-*   **Search**: The search index is built at runtime on the client side, so no complex indexing service is needed for now.
+## 🏗 Architecture
+
+Velox follows a hybrid architecture:
+
+1.  **Frontend (Next.js)**:
+    - Static Content: Markdown-based Knowledge Base.
+    - Interactive UI: React components for Matrices, Checklists, and DAST Dashboard.
+    - PWA: Offline capabilities via `next-pwa`.
+
+2.  **Backend (Python/FastAPI)**:
+    - **Orchestrator**: Manages security scan jobs.
+    - **Celery Worker**: Executes scans asynchronously.
+    - **Tools**: Wraps **Nuclei** (Subprocess) and **OWASP ZAP** (API).
+
+3.  **Data & State**:
+    - **Redis**: Job queue and localized caching.
+    - **LocalStorage**: User preferences (Checklist state, Theme).
+
+## 🛡️ Security Features
+- **Content Security Policy (CSP)**: Strict configuration preventing XSS.
+- **Security Headers**: HSTS, X-Frame-Options, Permissions-Policy.
+- **Input Validation**: Zod-based validation for all API inputs.
+- **Secure Execution**: Scanners run in isolated containers.

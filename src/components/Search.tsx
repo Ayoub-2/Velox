@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DocData } from '@/lib/types';
+import { useStack } from '@/lib/stack-context';
 
 interface SearchProps {
     docs: DocData[];
@@ -11,20 +12,46 @@ interface SearchProps {
 
 export default function Search({ docs }: SearchProps) {
     const [query, setQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('All');
+    const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+    const { selectedStack } = useStack();
     const router = useRouter();
 
-    // Memoize filtered results to prevent unnecessary recalculations
+    // Extract unique categories from docs
+    const categories = useMemo(() => {
+        const unique = new Set(docs.map(d => d.category).filter(Boolean));
+        return ['All', ...Array.from(unique)];
+    }, [docs]);
+
+    const difficulties = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+
+    // Memoize filtered results
     const filteredDocs = useMemo(() => {
-        if (query === '') return [];
-        
+        if (query === '' && selectedCategory === 'All' && selectedDifficulty === 'All') return [];
+
         const searchLower = query.toLowerCase();
-        return docs.filter((doc) => (
-            doc.title.toLowerCase().includes(searchLower) ||
-            doc.description.toLowerCase().includes(searchLower) ||
-            doc.category?.toLowerCase().includes(searchLower) ||
-            doc.tags?.some(tag => tag.toLowerCase().includes(searchLower))
-        ));
-    }, [query, docs]);
+
+        return docs.filter((doc) => {
+            // 1. Text Search
+            const matchesSearch =
+                doc.title.toLowerCase().includes(searchLower) ||
+                doc.description.toLowerCase().includes(searchLower) ||
+                doc.tags?.some(tag => tag.toLowerCase().includes(searchLower));
+
+            // 2. Stack Filter (Global)
+            const matchesStack = selectedStack === 'All' ||
+                doc.tags?.some(tag => tag.toLowerCase() === selectedStack.toLowerCase()) ||
+                doc.category?.toLowerCase() === selectedStack.toLowerCase();
+
+            // 3. Category Filter
+            const matchesCategory = selectedCategory === 'All' || doc.category === selectedCategory;
+
+            // 4. Difficulty Filter
+            const matchesDifficulty = selectedDifficulty === 'All' || doc.difficulty === selectedDifficulty;
+
+            return matchesSearch && matchesStack && matchesCategory && matchesDifficulty;
+        });
+    }, [query, docs, selectedCategory, selectedDifficulty, selectedStack]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -33,76 +60,89 @@ export default function Search({ docs }: SearchProps) {
     };
 
     return (
-        <div className="relative w-full max-w-lg mx-auto mb-10 z-20">
-            <div className="relative group">
+        <div className="relative w-full max-w-2xl mx-auto mb-10 z-20">
+            {/* Search Input */}
+            <div className="relative group mb-3">
                 <input
                     type="text"
                     className="block w-full p-4 pl-12 text-base text-gray-100 placeholder-gray-400 border border-gray-700/50 rounded-xl bg-black/20 backdrop-blur-md focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-lg hover:shadow-blue-500/10 hover:border-blue-500/30 outline-none"
-                    placeholder="Search security patterns (e.g., 'SQL', 'Auth')..."
+                    placeholder={`Search ${selectedStack === 'All' ? '' : selectedStack + ' '}security patterns...`}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     aria-label="Search security patterns"
-                    aria-describedby="search-help"
-                    aria-expanded={query !== '' && filteredDocs.length > 0}
-                    aria-controls="search-results"
                 />
                 <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                    <svg 
-                        aria-hidden="true" 
-                        className="w-5 h-5 text-gray-400 group-focus-within:text-blue-400 transition-colors" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24" 
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </div>
-                <div id="search-help" className="sr-only">
-                    Search by pattern name, description, category, or tags. Press Escape to clear.
+                    <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
             </div>
 
-            {query !== '' && (
-                <div 
-                    className="absolute z-30 w-full mt-2 bg-gray-900/90 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-700/50 max-h-96 overflow-y-auto ring-1 ring-black/5"
-                    id="search-results"
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2 mb-2">
+                <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-slate-800/50 border border-slate-700/50 text-slate-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none hover:bg-slate-800 transition-colors"
+                >
+                    <option value="All">All Categories</option>
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+
+                <select
+                    value={selectedDifficulty}
+                    onChange={(e) => setSelectedDifficulty(e.target.value)}
+                    className="bg-slate-800/50 border border-slate-700/50 text-slate-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none hover:bg-slate-800 transition-colors"
+                >
+                    <option value="All">Any Difficulty</option>
+                    {difficulties.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+            </div>
+
+            {/* Results Dropdown */}
+            {(query !== '' || selectedCategory !== 'All' || selectedDifficulty !== 'All') && (
+                <div
+                    className="absolute z-30 w-full mt-2 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-700/50 max-h-96 overflow-y-auto ring-1 ring-black/5"
                     role="region"
                     aria-label="Search results"
                 >
                     {filteredDocs.length > 0 ? (
-                        <div className="py-2">
+                        <div className="divide-y divide-gray-800/50">
                             {filteredDocs.map((doc) => (
                                 <Link
                                     key={doc.id}
                                     href={`/knowledge-base/${doc.id}`}
-                                    className="block px-4 py-3 hover:bg-white/5 transition-colors group border-b border-gray-800/50 last:border-0 focus:outline-none focus:bg-white/10"
+                                    className="block px-4 py-3 hover:bg-white/5 transition-colors group"
                                 >
-                                    <div className="font-semibold text-gray-200 group-hover:text-blue-300 transition-colors">
-                                        {doc.title}
+                                    <div className="flex justify-between items-start">
+                                        <div className="font-semibold text-gray-200 group-hover:text-blue-300 transition-colors">
+                                            {doc.title}
+                                        </div>
+                                        {doc.difficulty && (
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full border ${doc.difficulty === 'Beginner' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                    doc.difficulty === 'Intermediate' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                                        'bg-red-500/10 text-red-400 border-red-500/20'
+                                                }`}>
+                                                {doc.difficulty}
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="text-sm text-gray-400 truncate mt-0.5">
                                         {doc.description}
                                     </div>
-                                    {doc.tags && (
-                                        <div className="mt-2 flex gap-1.5 flex-wrap">
-                                            {doc.tags.map(tag => (
-                                                <span 
-                                                    key={tag} 
-                                                    className="text-[10px] bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2 py-0.5 rounded-full"
-                                                >
-                                                    {tag}
-                                                </span>
+                                    <div className="mt-2 flex items-center gap-2">
+                                        {doc.category && <span className="text-[10px] text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded border border-slate-700/50">{doc.category}</span>}
+                                        <div className="flex gap-1 flex-wrap">
+                                            {doc.tags?.slice(0, 3).map(tag => (
+                                                <span key={tag} className="text-[10px] text-blue-400">#{tag}</span>
                                             ))}
                                         </div>
-                                    )}
+                                    </div>
                                 </Link>
                             ))}
                         </div>
                     ) : (
                         <div className="px-4 py-8 text-sm text-gray-400 text-center">
-                            No results found for &quot;{query}&quot;
+                            No results found. Try adjusting your filters or stack ({selectedStack}).
                         </div>
                     )}
                 </div>

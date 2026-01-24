@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import Search from '@/components/Search';
+import StackAwareArticleList from '@/components/StackAwareArticleList';
 import { getSortedDocsData } from '@/lib/docs';
 import { DocData } from '@/lib/types';
 
 export const metadata = {
-  title: 'Knowledge Base - Velox Security',
-  description: 'Browse security patterns including authentication, API security, input validation, access control, and more.',
-  keywords: ['security patterns', 'knowledge base', 'authentication', 'API security', 'OWASP'],
+    title: 'Knowledge Base - Velox Security',
+    description: 'Browse security patterns including authentication, API security, input validation, access control, and more.',
+    keywords: ['security patterns', 'knowledge base', 'authentication', 'API security', 'OWASP'],
 };
 
 const getCategoryTheme = (category: string | undefined) => {
@@ -80,46 +81,8 @@ export default function KnowledgeBase() {
                     </p>
                     <Search docs={allDocs} />
                 </div>
-                <div className="mt-12 sm:mt-16 grid gap-4 sm:gap-6 max-w-lg mx-auto lg:grid-cols-3 lg:max-w-none">
-                    {allDocs.map((doc: DocData) => {
-                        const theme = getCategoryTheme(doc.category);
-                        return (
-                            <Link 
-                                key={doc.id} 
-                                href={`/knowledge-base/${doc.id}`} 
-                                className={`flex flex-col rounded-xl border ${theme.border} bg-gray-900/50 backdrop-blur-sm p-4 sm:p-6 ${theme.hover_border} ${theme.hover_bg} transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900`}
-                            >
-                                <h3 className="text-lg sm:text-xl font-bold text-gray-100 group-hover:text-white transition-colors flex items-center gap-2">
-                                    {doc.title}
-                                </h3>
-                                {doc.category && (
-                                    <span className={`inline-block mt-2 self-start px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-semibold ${theme.badge_bg} ${theme.badge_text} ${theme.badge_border} border`}>
-                                        {doc.category}
-                                    </span>
-                                )}
-                                <p className="mt-3 text-sm text-gray-400 line-clamp-3">
-                                    {doc.description}
-                                </p>
-                                {doc.tags && doc.tags.length > 0 && (
-                                    <div className="mt-4 flex gap-2 flex-wrap">
-                                        {doc.tags.slice(0, 3).map((tag: string) => (
-                                            <span 
-                                                key={tag} 
-                                                className="text-xs font-medium px-2 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700"
-                                            >
-                                                {tag}
-                                            </span>
-                                        ))}
-                                        {doc.tags.length > 3 && (
-                                            <span className="text-xs font-medium px-2 py-1 text-gray-500">
-                                                +{doc.tags.length - 3}
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-                            </Link>
-                        );
-                    })}
+                <div className="mt-12 sm:mt-16 mx-auto">
+                    <StackAwareArticleList initialDocs={allDocs} />
                 </div>
             </div>
         </div>

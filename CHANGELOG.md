@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-01-24 (Phase 2: DAST Orchestration)
+
+### Added
+- **DAST Orchestrator Service**: Python (FastAPI) backend for managing security scans.
+- **Tool Support**:
+    - **Nuclei**: Integrated for fast, template-based vulnerability scanning.
+    - **OWASP ZAP**: Integrated for baseline spidering and passive scanning.
+- **DAST Dashboard**: Web UI (`/dast`) for triggering scans and viewing live status.
+- **Job Queue**: Redis + Celery implementation for asynchronous scan execution.
+- **Infrastructure**: Full-stack `docker-compose` setup (Frontend, Backend, Worker, Redis, ZAP).
+- **API Client**: TypeScript client for interacting with the Orchestrator service.
+
+### Changed
+- Updated `Navbar` to include "DAST Engine" link.
+- Updated `walkthrough.md` with DAST verification steps.
+
+## [0.3.0] - 2026-01-24
+
+### Added
+- **Tech Stack Selector**: Global context for filtering content by stack (Frontend, Backend, DevOps, Mobile).
+- **Advanced Search**: Filter content by Category and Difficulty in addition to text search.
+- **Interactive Checklists**: Persistent, trackable security checklists (Node.js, React, API Security).
+- **Glossary**: A-Z searchable glossary of security terms.
+- **Comparison Matrices**: Interactive side-by-side pattern comparisons (e.g., JWT vs Session).
+- **Code Examples DB**: Searchable repository of code snippets extracted from knowledge base articles.
+- **Offline Mode**: PWA support with Service Worker and Manifest.
+- **Navbar Refactor**: Grouped resources into a dropdown menu for better usability.
+
+### Changed
+- Refactored `Navbar` to use `NavDropdown` component.
+- Updated `Search` component to support new filters.
+- Configured Docker build to run snippet extraction and support PWA (Webpack).
+
 ## [0.2.0] - 2026-01-15
 
 ### UI Overhaul (Premium Dark Mode)
@@ -23,7 +56,12 @@ All notable changes to this project will be documented in this file.
 - **Docker**: Fixed build issues by adding `standalone` output in `next.config.ts`.
 - **Dependencies**: Switched to `npm install` in Dockerfile for better compatibility.
 
-## [0.1.0] - Unreleased
+## [0.2.1] - 2026-01-24
+
+### Documentation
+- **Feasibility Report**: Added `docs/FEASIBILITY_REPORT.md` analyzing Phase 2 feature proposals against the current static architecture. identified 7 low-feasibility features requiring backend infrastructure.
+
+## [0.2.0] - 2026-01-15
 
 ### Added
 - Initial project structure.
