@@ -2,7 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.2.0] - 2026-01-15
+
+### UI Overhaul (Premium Dark Mode)
+- **Global Navigation**: Added persistent `Navbar` and `Footer` across all pages.
+- **Landing Page**: Completely redesigned with premium glassmorphism, animated gradients, and feature cards.
+- **Dynamic Theming**: Implemented category-based color schemes (e.g., Purple for Operations, Blue for Auth) that adapt borders, badges, and backgrounds automatically.
+- **Article Layout**: Enhanced readability with `max-w-7xl` containers, distinct headers, and improved typography (`@tailwindcss/typography`).
+
+### Content Enrichment (Deep Dive)
+- **Expanded Core Patterns**: Rewrote 6 key articles with deep technical details and "Secure vs Insecure" code examples:
+    - `access-control.md`: Added RBAC/ABAC implementations and IDOR prevention.
+    - `sql-injection-prevention.md`: Added ORM (Prisma/TypeORM) specific defenses.
+    - `input-validation.md`: Added Zod schema validation strategies.
+    - `secure-authentication.md`: Added Argon2 hashing and MFA patterns.
+    - `secrets-management.md`: Added Vault/Env best practices.
+    - `cross-site-scripting-prevention.md`: Added React CSP and sanitization contexts.
+
+### DevOps
+- **Docker**: Fixed build issues by adding `standalone` output in `next.config.ts`.
+- **Dependencies**: Switched to `npm install` in Dockerfile for better compatibility.
+
+## [0.1.0] - Unreleased
 
 ### Added
 - Initial project structure.
