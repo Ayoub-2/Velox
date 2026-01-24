@@ -1,7 +1,7 @@
 from celery_app import celery_app
 from tools.nuclei import NucleiWrapper
 from tools.zap import ZAPWrapper
-from models import ScanType, ScanResult
+from models import ScanType
 import logging
 
 logger = logging.getLogger(__name__)

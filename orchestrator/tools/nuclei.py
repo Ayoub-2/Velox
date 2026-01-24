@@ -24,12 +24,16 @@ class NucleiWrapper:
         
         command = [
             self.binary_path,
-            "-target", target,
-            "-json",  # Output as JSON
+            "-u", target,
+            "-j",  # Output as JSON
             "-silent", # Only show findings
             "-nm", # No meta details
         ]
         
+        
+        # Debug: Log the exact command
+        logger.info(f"Executing: {' '.join(command)}")
+
         try:
             # Secure subprocess call - shell=False prevents injection
             result = subprocess.run(
@@ -42,7 +46,8 @@ class NucleiWrapper:
             
             if result.returncode != 0:
                 logger.error(f"Nuclei Execution Failed: {result.stderr}")
-                raise Exception(f"Nuclei failed with code {result.returncode}")
+                logger.error(f"Stdout was: {result.stdout}")
+                raise Exception(f"Nuclei failed with code {result.returncode}. Stderr: {result.stderr}")
 
             findings = []
             for line in result.stdout.splitlines():

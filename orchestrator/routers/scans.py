@@ -50,10 +50,19 @@ async def get_scan_status(scan_id: str):
     
     # Check Celery status if still pending/running
     if scan_record.status in [ScanStatus.PENDING, ScanStatus.RUNNING]:
-        # Note: In a real app, rely on DB updates from the worker.
-        # Here we poll Celery for demo simplicity, but it's not ideal for scale.
-        pass 
-        
+        task_result = AsyncResult(scan_id)
+        if task_result.ready():
+            try:
+                result_data = task_result.get()
+                # Update DB
+                scan_record.status = ScanStatus.COMPLETED
+                scan_record.result = result_data.get("findings")
+            except Exception as e:
+                scan_record.status = ScanStatus.FAILED
+                logger.error(f"Scan {scan_id} failed: {e}")
+        elif task_result.state == "STARTED":
+             scan_record.status = ScanStatus.RUNNING
+             
     return scan_record
 
 @router.get("/scans", response_model=List[ScanResponse])

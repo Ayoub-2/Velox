@@ -58,11 +58,14 @@ export default function DastPage() {
                             <input
                                 type="url"
                                 required
-                                placeholder="https://example.com"
+                                placeholder="http://web:3000"
                                 className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 value={target}
                                 onChange={e => setTarget(e.target.value)}
                             />
+                            <p className="text-xs text-slate-500 mt-2">
+                                💡 Docker Tip: Use <code className="text-slate-400">http://web:3000</code> to scan this app internally.
+                            </p>
                         </div>
                         <div className="w-full md:w-48">
                             <label className="block text-sm font-bold text-slate-300 mb-2">Scan Mode</label>
