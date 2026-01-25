@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { apiClient, ScanResponse } from '@/lib/api';
 
 export default function DastPage() {
@@ -114,29 +115,37 @@ export default function DastPage() {
                             </thead>
                             <tbody className="divide-y divide-slate-800">
                                 {scans.map(scan => (
-                                    <tr key={scan.id} className="hover:bg-slate-800/30 transition-colors">
+                                    <tr key={scan.id} className="hover:bg-slate-800/30 transition-colors cursor-pointer group">
                                         <td className="px-6 py-4">
-                                            <span className={`
-                                                inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                                                ${scan.status === 'completed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : ''}
-                                                ${scan.status === 'running' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse' : ''}
-                                                ${scan.status === 'failed' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : ''}
-                                                ${scan.status === 'pending' ? 'bg-slate-700 text-slate-300' : ''}
-                                            `}>
-                                                {scan.status}
-                                            </span>
+                                            <Link href={`/dast/${scan.id}`} className="contents">
+                                                <span className={`
+                                                    inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
+                                                    ${scan.status === 'completed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : ''}
+                                                    ${scan.status === 'running' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse' : ''}
+                                                    ${scan.status === 'failed' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : ''}
+                                                    ${scan.status === 'pending' ? 'bg-slate-700 text-slate-300' : ''}
+                                                `}>
+                                                    {scan.status}
+                                                </span>
+                                            </Link>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-300 font-medium">{scan.target_url}</td>
-                                        <td className="px-6 py-4 text-slate-400 text-sm capitalize">{scan.scan_type}</td>
+                                        <td className="px-6 py-4 text-slate-300 font-medium">
+                                            <Link href={`/dast/${scan.id}`}>{scan.target_url}</Link>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-400 text-sm capitalize">
+                                            <Link href={`/dast/${scan.id}`}>{scan.scan_type}</Link>
+                                        </td>
                                         <td className="px-6 py-4 text-slate-500 text-sm">
-                                            {new Date(scan.created_at).toLocaleString()}
+                                            <Link href={`/dast/${scan.id}`}>{new Date(scan.created_at).toLocaleString()}</Link>
                                         </td>
                                         <td className="px-6 py-4 text-slate-300">
-                                            {scan.status === 'completed' && scan.result ? (
-                                                <span className="font-mono text-xs">
-                                                    {Array.isArray(scan.result) ? `${scan.result.length} Issues` : 'View Report'}
-                                                </span>
-                                            ) : '-'}
+                                            <Link href={`/dast/${scan.id}`}>
+                                                {scan.status === 'completed' && scan.result ? (
+                                                    <span className="font-mono text-xs text-blue-400 hover:text-blue-300 underline decoration-blue-500/30 hover:decoration-blue-500">
+                                                        {Array.isArray(scan.result) ? `${scan.result.length} Issues` : 'View Report'}
+                                                    </span>
+                                                ) : '-'}
+                                            </Link>
                                         </td>
                                     </tr>
                                 ))}

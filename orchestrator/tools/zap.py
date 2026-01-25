@@ -22,7 +22,9 @@ class ZAPWrapper:
             params = params or {}
             params['apikey'] = self.api_key
             
-            response = requests.request(method, url, params=params, headers=self.headers, timeout=10)
+            # User requested to "wait forever" (deep scan). 
+            # We set a very high timeout (1 hour) to allow ZAP to process large result sets.
+            response = requests.request(method, url, params=params, headers=self.headers, timeout=3600)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -32,7 +34,6 @@ class ZAPWrapper:
     def run_baseline_scan(self, target: str) -> Dict[str, Any]:
         """
         Triggers a ZAP Spider scan + Passive Scan.
-        For true 'Baseline', strict logic is needed, but here we start a Spider.
         """
         logger.info(f"Starting ZAP Spider for: {target}")
         
@@ -43,7 +44,7 @@ class ZAPWrapper:
         if not scan_id:
             raise Exception("Failed to start ZAP spider")
             
-        # 2. Poll Status
+        # 2. Poll Status (Wait until finished)
         while True:
             status_resp = self._request("GET", "spider/view/status", {"scanId": scan_id})
             progress = int(status_resp.get("status", 0))
@@ -55,4 +56,12 @@ class ZAPWrapper:
         
         # 3. Get Alerts
         alerts_resp = self._request("GET", "core/view/alerts", {"baseurl": target})
-        return alerts_resp.get("alerts", [])
+        alerts = alerts_resp.get("alerts", [])
+        
+        if not alerts:
+            logger.warning("ZAP Scan finished but returned 0 alerts.")
+            # We return empty list (success) but log it. 
+            # If user wants strict "failure" on empty data, we could raise Exception here.
+            # But 0 findings is a valid security result.
+            
+        return alerts

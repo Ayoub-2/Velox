@@ -1,19 +1,19 @@
 # Roadmap
 
-## Phase 1: Foundation (The Knowledge Base)
+## Phase 1: Foundation (The Knowledge Base) - **COMPLETED**
 *   **Goal**: Establish the "Source of Truth" for secure design.
 *   **Deliverables**:
-    *   Web Portal with Search & Article viewing.
-    *   Initial content population (The "Top 10" patterns).
-    *   Drafting the "Security by Design" reference guide.
+    *   [x] Web Portal with Search & Article viewing.
+    *   [x] Initial content population (The "Top 10" patterns).
+    *   [x] Drafting the "Security by Design" reference guide.
 
-## Phase 2: Orchestration (The Engine)
+## Phase 2: Orchestration (The Engine) - **COMPLETED**
 *   **Goal**: Enable on-demand security verification.
 *   **Deliverables**:
-    *   DAST Orchestrator Service.
-    *   Integration with OWASP ZAP (Basic Scan).
-    *   Integration with Nuclei (Targeted Scan).
-    *   Scan Results Dashboard.
+    *   [x] DAST Orchestrator Service.
+    *   [x] Integration with OWASP ZAP (Basic Scan).
+    *   [x] Integration with Nuclei (Targeted Scan).
+    *   [x] Scan Results Dashboard.
 
 ## Phase 3: The Feedback Loop (Integration)
 *   **Goal**: Connect findings back to design guidance.

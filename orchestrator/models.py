@@ -32,4 +32,4 @@ class ScanResponse(BaseModel):
     scan_type: ScanType
     status: ScanStatus
     created_at: datetime
-    result: Optional[Dict[str, Any]] = None
+    result: Optional[List[Dict[str, Any]]] = None

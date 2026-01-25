@@ -38,17 +38,18 @@ export default function Home() {
           </Link>
 
           {/* DAST Orchestrator (Phase 2) */}
-          <div
-            className="group relative rounded-2xl border border-slate-800 bg-slate-900/30 p-6 sm:p-8 opacity-60 cursor-not-allowed"
-            aria-disabled="true"
+          <Link
+            href="/dast"
+            className="group relative rounded-2xl border border-slate-700 bg-slate-800/50 p-6 sm:p-8 hover:bg-slate-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <h2 className="mb-4 text-xl sm:text-2xl font-bold text-slate-500">
-              DAST Engine <span className="text-xs ml-2 px-2 py-1 rounded-full bg-slate-800 text-yellow-500/80 border border-slate-700">Phase 2</span>
+            <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <h2 className="mb-4 text-xl sm:text-2xl font-bold text-white group-hover:text-blue-300 transition-colors">
+              DAST Engine <span className="text-xs ml-2 px-2 py-1 rounded-full bg-slate-800 text-green-400 border border-green-500/30">Live</span>
             </h2>
-            <p className="text-sm sm:text-base text-slate-600">
+            <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
               Automated security scanning and vulnerability reporting orchestration.
             </p>
-          </div>
+          </Link>
 
           {/* Analytics (Phase 3) */}
           <div

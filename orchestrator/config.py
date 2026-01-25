@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     
     # Infrastructure
     REDIS_URL: str = "redis://redis:6379/0"
+    ZAP_URL: str = "http://zap:8090"
     
     # Tool Paths
     NUCLEI_PATH: str = "/usr/local/bin/nuclei"

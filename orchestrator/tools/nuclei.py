@@ -25,9 +25,11 @@ class NucleiWrapper:
         command = [
             self.binary_path,
             "-u", target,
-            "-j",  # Output as JSON
-            "-silent", # Only show findings
-            "-nm", # No meta details
+            "-t", "/home/appuser/nuclei-templates",
+            "-tags", "cve,misconfig,exposures",
+            "-j",            # JSON output
+            "-silent",       # Only output results
+            "-nm",           # No metadata in output (cleaner parsing)
         ]
         
         
@@ -41,7 +43,7 @@ class NucleiWrapper:
                 capture_output=True,
                 text=True,
                 check=False, # We handle errors manually
-                timeout=300 # 5 minute timeout
+                timeout=600 # 10 minute timeout
             )
             
             if result.returncode != 0:

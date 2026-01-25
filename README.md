@@ -15,10 +15,18 @@ All project documentation is located in the [project-docs/](project-docs/) direc
 *   [Roadmap](project-docs/ROADMAP.md)
 *   [Release Strategy](project-docs/RELEASE_STRATEGY.md)
 
-## Key Features (Phase 1)
-*   **Knowledge Base**: Access to 10+ critical security patterns.
-*   **Search**: Real-time fuzzy search for finding patterns instantly.
+## Key Features
+
+### Phase 1: Knowledge Base
+*   **Secure Patterns**: Access to 10+ critical security patterns.
+*   **Search Engine**: Real-time fuzzy search for finding compliance checks instantly.
 *   **Premium UI**: Responsive, accessible, and clean design.
+
+### Phase 2: DAST Orchestration
+*   **Security Scanning**: Integrated support for **Nuclei** (Fast) and **OWASP ZAP** (Baseline).
+*   **Scan Dashboard**: Trigger, monitor, and manage security scans via UI.
+*   **Vulnerability Reporting**: detailed findings table with color-coded severity.
+*   **Hot Reloading**: Developer-friendly setup with instant UI updates.
 
 ## Knowledge Base Content
 

@@ -13,9 +13,13 @@ All notable changes to this project will be documented in this file.
 - **Job Queue**: Redis + Celery implementation for asynchronous scan execution.
 - **Infrastructure**: Full-stack `docker-compose` setup (Frontend, Backend, Worker, Redis, ZAP).
 - **API Client**: TypeScript client for interacting with the Orchestrator service.
+- **Reporting**: Excel export functionality for scan results (`/scans/{id}/export`).
 
 ### Changed
-- Updated `Navbar` to include "DAST Engine" link.
+- **Navbar**: Improved visibility logic (Stack Selector only appears on Knowledge Base).
+- **Scan Details**: Enhanced "Failed" state visibility and added "Download Report" button.
+- **Error Handling**: Improved API client to parse and display specific server-side errors.
+- **Docker**: Automated Nuclei template installation in `orchestrator/Dockerfile`.
 - Updated `walkthrough.md` with DAST verification steps.
 
 ## [0.3.0] - 2026-01-24

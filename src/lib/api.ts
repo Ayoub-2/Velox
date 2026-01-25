@@ -21,19 +21,28 @@ export const apiClient = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ target_url: targetUrl, scan_type: scanType }),
         });
-        if (!res.ok) throw new Error('Failed to trigger scan');
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to trigger scan');
+        }
         return res.json();
     },
 
     async getScans(): Promise<ScanResponse[]> {
         const res = await fetch(`${API_BASE_URL}/scans`);
-        if (!res.ok) throw new Error('Failed to fetch scans');
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to fetch scans');
+        }
         return res.json();
     },
 
     async getScan(id: string): Promise<ScanResponse> {
         const res = await fetch(`${API_BASE_URL}/scans/${id}`);
-        if (!res.ok) throw new Error('Failed to fetch scan details');
+        if (!res.ok) {
+            const error = await res.json().catch(() => ({}));
+            throw new Error(error.detail || 'Failed to fetch scan details');
+        }
         return res.json();
     }
 };

@@ -4,10 +4,12 @@ from tools.zap import ZAPWrapper
 from models import ScanType
 import logging
 
+from config import settings
+
 logger = logging.getLogger(__name__)
 
 nuclei_runner = NucleiWrapper()
-zap_runner = ZAPWrapper() # Expects ZAP container at http://zap:8080
+zap_runner = ZAPWrapper(base_url=settings.ZAP_URL)
 
 @celery_app.task(bind=True, name="run_scan_task")
 def run_scan_task(self, scan_id: str, target_url: str, scan_type: str):
