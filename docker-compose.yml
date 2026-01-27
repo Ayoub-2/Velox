@@ -49,6 +49,19 @@ services:
     volumes:
       - ./orchestrator:/app
 
+  # Periodic Task Scheduler (Celery Beat)
+  beat:
+    build: ./orchestrator
+    command: celery -A celery_app beat --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://velox:veloxpass@db:5432/velox_orchestrator
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - ./orchestrator:/app
+
   # Job Queue Broker
   redis:
     image: redis:7-alpine

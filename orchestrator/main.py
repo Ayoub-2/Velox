@@ -32,9 +32,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from routers import scans, targets
+from routers import scans, targets, stats
 app.include_router(scans.router, prefix=settings.API_V1_STR, tags=["scans"])
 app.include_router(targets.router, prefix=settings.API_V1_STR, tags=["targets"])
+app.include_router(stats.router, prefix=settings.API_V1_STR, tags=["stats"])
 
 # Global Exception Handler
 @app.exception_handler(Exception)

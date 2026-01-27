@@ -103,12 +103,18 @@ async def create_scan(request: ScanRequest, db: AsyncSession = Depends(get_db)):
         await db.refresh(target)
     
     # 2. Create Scan Record
+    # SECURITY: Redact auth_headers before saving to DB
+    scan_options_dump = request.options.model_dump()
+    db_options = scan_options_dump.copy()
+    if db_options.get("auth_headers"):
+        db_options["auth_headers"] = {"REDACTED": "Sensitive credentials removed"}
+
     new_scan = Scan(
         id=scan_id,
         target_id=target.id,
         scan_type=request.scan_type,
         status=ScanStatus.PENDING,
-        options=request.options.model_dump(), # Store as JSON
+        options=db_options, # Store REDACTED options
     )
     db.add(new_scan)
     await db.commit()
@@ -199,13 +205,30 @@ async def list_scans(db: AsyncSession = Depends(get_db)):
     return response
 
 @router.get("/scans/{scan_id}/export")
-async def export_scan_report(scan_id: str, db: AsyncSession = Depends(get_db)):
+async def export_scan_report(scan_id: str, format: str = "xlsx", db: AsyncSession = Depends(get_db)):
     """
-    Export scan results as an Excel file.
+    Export scan results as Excel or PDF.
     """
     scan = await _get_scan_or_404(scan_id, db)
     await _sync_scan_with_celery(scan, db)
     
+    # Load findings explicitly if not loaded
+    if not scan.findings:
+        # In a real app we might reload or check if lazy loaded attached
+        pass
+        
+    if format == "pdf":
+         from utils.report_gen import generate_pdf_report
+         pdf_bytes = generate_pdf_report(scan, scan.findings)
+         
+         filename = f"velox_scan_{scan_id}.pdf"
+         return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    
+    # Default to XLSX
     if not scan.findings:
         raise HTTPException(status_code=400, detail="No results to export")
         

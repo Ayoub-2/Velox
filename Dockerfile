@@ -2,7 +2,7 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm install --force
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder

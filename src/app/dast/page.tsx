@@ -3,41 +3,84 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { apiClient, ScanResponse } from '@/lib/api';
+import {
+    BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
+    PieChart, Pie, Cell
+} from 'recharts';
+import { Shield, AlertTriangle, Activity, Zap } from 'lucide-react';
 
 export default function DastPage() {
     const [target, setTarget] = useState('');
     const [scanType, setScanType] = useState('nuclei');
+    const [showAdvanced, setShowAdvanced] = useState(false);
+    const [authHeaders, setAuthHeaders] = useState<{ key: string, value: string }[]>([{ key: '', value: '' }]);
     const [scans, setScans] = useState<ScanResponse[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [trend, setTrend] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState('');
 
     useEffect(() => {
-        loadScans();
-        const interval = setInterval(loadScans, 5000); // Poll every 5s
+        loadData();
+        const interval = setInterval(loadData, 10000); // Poll every 10s
         return () => clearInterval(interval);
     }, []);
 
-    const loadScans = async () => {
+    const loadData = async () => {
         try {
-            const data = await apiClient.getScans();
-            // Sort by newest first
-            setScans(data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+            const [scansData, statsData, trendData] = await Promise.all([
+                apiClient.getScans(),
+                apiClient.getDashboardStats().catch(() => null),
+                apiClient.getFindingTrend().catch(() => [])
+            ]);
+
+            setScans(scansData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+            setStats(statsData);
+            setTrend(trendData);
         } catch (e) {
             console.error(e);
         }
+    };
+
+    const handleAddHeader = () => {
+        setAuthHeaders([...authHeaders, { key: '', value: '' }]);
+    };
+
+    const handleHeaderChange = (index: number, field: 'key' | 'value', val: string) => {
+        const newHeaders = [...authHeaders];
+        newHeaders[index][field] = val;
+        setAuthHeaders(newHeaders);
+    };
+
+    const handleRemoveHeader = (index: number) => {
+        setAuthHeaders(authHeaders.filter((_, i) => i !== index));
     };
 
     const handleStartScan = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setMsg('');
+
+        // Prepare Headers
+        const headers: Record<string, string> = {};
+        authHeaders.forEach(h => {
+            if (h.key.trim() && h.value.trim()) {
+                headers[h.key.trim()] = h.value.trim();
+            }
+        });
+
         try {
-            const result = await apiClient.triggerScan(target, scanType);
+            const result = await apiClient.triggerScan(target, scanType, {
+                auth_headers: Object.keys(headers).length > 0 ? headers : undefined
+            });
             setMsg(`Scan started with ID: ${result.id}`);
-            loadScans();
+            loadData();
             setTarget('');
+            setShowAdvanced(false);
+            setAuthHeaders([{ key: '', value: '' }]);
         } catch (e) {
-            setMsg('Error starting scan. Is the orchestrator running?');
+            const err = e as Error;
+            setMsg(`Error starting scan: ${err.message}`);
         } finally {
             setLoading(false);
         }
@@ -45,50 +88,220 @@ export default function DastPage() {
 
     return (
         <div className="min-h-screen bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-10">
-                    <h1 className="text-4xl font-extrabold text-white mb-2">DAST Orchestrator</h1>
-                    <p className="text-slate-400">Trigger security scans against your targets.</p>
+                    <h1 className="text-4xl font-extrabold text-white mb-2 tracking-tight">Velox DAST Orchestrator</h1>
+                    <p className="text-slate-400">Enterprise-grade security scanning & vulnerability management.</p>
                 </div>
+
+                {/* KPI Stats Grid */}
+                {stats && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex items-center gap-4">
+                            <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400">
+                                <Activity size={24} />
+                            </div>
+                            <div>
+                                <p className="text-slate-400 text-xs font-bold uppercase">Total Scans</p>
+                                <p className="text-2xl font-bold text-white">{stats.total_scans}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex items-center gap-4">
+                            <div className="p-3 bg-red-500/20 rounded-lg text-red-500">
+                                <Shield size={24} />
+                            </div>
+                            <div>
+                                <p className="text-slate-400 text-xs font-bold uppercase">Critical Risks</p>
+                                <p className="text-2xl font-bold text-white">{stats.findings?.critical || 0}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex items-center gap-4">
+                            <div className="p-3 bg-orange-500/20 rounded-lg text-orange-500">
+                                <AlertTriangle size={24} />
+                            </div>
+                            <div>
+                                <p className="text-slate-400 text-xs font-bold uppercase">High Risks</p>
+                                <p className="text-2xl font-bold text-white">{stats.findings?.high || 0}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex items-center gap-4">
+                            <div className="p-3 bg-emerald-500/20 rounded-lg text-emerald-500">
+                                <Zap size={24} />
+                            </div>
+                            <div>
+                                <p className="text-slate-400 text-xs font-bold uppercase">Active Targets</p>
+                                {/* Mock for now or add to stats API */}
+                                <p className="text-2xl font-bold text-white">--</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Analytics Charts */}
+                {trend.length > 0 && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        {/* Trend Chart */}
+                        <div className="lg:col-span-2 bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                            <h3 className="text-white font-bold mb-6 flex items-center gap-2">
+                                <Activity size={18} className="text-blue-400" />
+                                Vulnerability Trend (7 Days)
+                            </h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={trend}>
+                                        <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                        <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                        <RechartsTooltip
+                                            contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}
+                                            itemStyle={{ color: '#fff' }}
+                                        />
+                                        <Bar dataKey="critical" name="Critical" fill="#ef4444" radius={[4, 4, 0, 0]} stackId="a" />
+                                        <Bar dataKey="high" name="High" fill="#f97316" radius={[4, 4, 0, 0]} stackId="a" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Severity Distribution */}
+                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                            <h3 className="text-white font-bold mb-6">Risk Distribution</h3>
+                            <div className="h-64 flex items-center justify-center">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={[
+                                                { name: 'Critical', value: stats?.findings?.critical || 0, color: '#ef4444' },
+                                                { name: 'High', value: stats?.findings?.high || 0, color: '#f97316' },
+                                                { name: 'Medium', value: stats?.findings?.medium || 0, color: '#eab308' },
+                                                { name: 'Low', value: stats?.findings?.low || 0, color: '#3b82f6' },
+                                            ].filter(x => x.value > 0)}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {[
+                                                { name: 'Critical', value: stats?.findings?.critical || 0, color: '#ef4444' },
+                                                { name: 'High', value: stats?.findings?.high || 0, color: '#f97316' },
+                                                { name: 'Medium', value: stats?.findings?.medium || 0, color: '#eab308' },
+                                                { name: 'Low', value: stats?.findings?.low || 0, color: '#3b82f6' },
+                                            ].filter(x => x.value > 0).map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Scan Form */}
                 <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 mb-12 shadow-lg backdrop-blur-sm">
-                    <form onSubmit={handleStartScan} className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 w-full">
-                            <label className="block text-sm font-bold text-slate-300 mb-2">Target URL</label>
-                            <input
-                                type="url"
-                                required
-                                placeholder="http://web:3000"
-                                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                                value={target}
-                                onChange={e => setTarget(e.target.value)}
-                            />
-                            <p className="text-xs text-slate-500 mt-2">
-                                💡 Docker Tip: Use <code className="text-slate-400">http://web:3000</code> to scan this app internally.
-                            </p>
-                        </div>
-                        <div className="w-full md:w-48">
-                            <label className="block text-sm font-bold text-slate-300 mb-2">Scan Mode</label>
-                            <select
-                                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                                value={scanType}
-                                onChange={e => setScanType(e.target.value)}
+                    <form onSubmit={handleStartScan} className="flex flex-col gap-6">
+                        <div className="flex flex-col md:flex-row gap-4 items-end">
+                            <div className="flex-1 w-full">
+                                <label className="block text-sm font-bold text-slate-300 mb-2">Target URL</label>
+                                <input
+                                    type="url"
+                                    required
+                                    placeholder="http://web:3000"
+                                    className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    value={target}
+                                    onChange={e => setTarget(e.target.value)}
+                                />
+                            </div>
+                            <div className="w-full md:w-48">
+                                <label className="block text-sm font-bold text-slate-300 mb-2">Scan Mode</label>
+                                <select
+                                    className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={scanType}
+                                    onChange={e => setScanType(e.target.value)}
+                                >
+                                    <option value="nuclei">Nuclei (Fast)</option>
+                                    <option value="baseline">ZAP Baseline</option>
+                                    <option value="full">ZAP Full Scan</option>
+                                </select>
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className={`
+                                    w-full md:w-auto px-6 py-3 rounded-lg font-bold text-white shadow-lg transition-all
+                                    ${loading ? 'bg-slate-600 cursor-wait' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/25'}
+                                `}
                             >
-                                <option value="nuclei">Nuclei (Fast)</option>
-                                <option value="baseline">ZAP Baseline</option>
-                            </select>
+                                {loading ? 'Starting...' : '🚀 Start Scan'}
+                            </button>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className={`
-                                w-full md:w-auto px-6 py-3 rounded-lg font-bold text-white shadow-lg transition-all
-                                ${loading ? 'bg-slate-600 cursor-wait' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/25'}
-                            `}
-                        >
-                            {loading ? 'Starting...' : '🚀 Start Scan'}
-                        </button>
+
+                        {/* Advanced Options Toggle */}
+                        <div>
+                            <button
+                                type="button"
+                                onClick={() => setShowAdvanced(!showAdvanced)}
+                                className="text-sm text-slate-400 hover:text-white flex items-center gap-2 transition-colors"
+                            >
+                                {showAdvanced ? '▼' : '▶'} Advanced Configuration
+                            </button>
+                        </div>
+
+                        {/* Auth Configuration */}
+                        {showAdvanced && (
+                            <div className="bg-slate-900/50 p-6 rounded-lg border border-slate-700 animate-in fade-in slide-in-from-top-2">
+                                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-yellow-400">
+                                        <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+                                    </svg>
+                                    Authentication Headers
+                                </h3>
+                                <div className="space-y-3">
+                                    {authHeaders.map((header, idx) => (
+                                        <div key={idx} className="flex gap-3">
+                                            <input
+                                                type="text"
+                                                placeholder="Header (e.g. Authorization)"
+                                                className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 outline-none"
+                                                value={header.key}
+                                                onChange={e => handleHeaderChange(idx, 'key', e.target.value)}
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="Value (e.g. Bearer token...)"
+                                                className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500 outline-none"
+                                                value={header.value}
+                                                onChange={e => handleHeaderChange(idx, 'value', e.target.value)}
+                                            />
+                                            {authHeaders.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveHeader(idx)}
+                                                    className="text-slate-500 hover:text-red-400 px-2"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={handleAddHeader}
+                                        className="text-xs text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+                                    >
+                                        + Add Header
+                                    </button>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-3">
+                                    ⚠️ Headers are sent in plain text to the scanner. Ensure you are using HTTPS in production.
+                                </p>
+                            </div>
+                        )}
                     </form>
                     {msg && (
                         <div className={`mt-4 text-center text-sm font-medium ${msg.includes('Error') ? 'text-red-400' : 'text-green-400'}`}>
