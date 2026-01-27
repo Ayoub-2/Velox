@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-01-25 (Phase 2.1: Persistence)
+
+### Added
+- **Database**: Migrated from in-memory to PostgreSQL 15 for scan history.
+- **ORM**: Implemented SQLAlchemy (Async) + Alembic for migrations.
+- **Targets API**: New endpoints (`/targets`) to manage Projects/Assets.
+- **Tool Optimization**:
+    - **ZAP**: Added Ajax Spider (Headless), Active Scan, and Auth Header injection.
+    - **Nuclei**: Added Rate Limiting, Concurrency, and Auth injection.
+- **Infrastructure**: Added `db` container and volume.
+
 ## [0.4.0] - 2026-01-24 (Phase 2: DAST Orchestration)
 
 ### Added

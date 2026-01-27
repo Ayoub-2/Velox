@@ -15,6 +15,13 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
+from contextlib import asynccontextmanager
+from database import init_db
+
+@app.on_event("startup")
+async def on_startup():
+    await init_db()
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
@@ -25,8 +32,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from routers import scans
+from routers import scans, targets
 app.include_router(scans.router, prefix=settings.API_V1_STR, tags=["scans"])
+app.include_router(targets.router, prefix=settings.API_V1_STR, tags=["targets"])
 
 # Global Exception Handler
 @app.exception_handler(Exception)

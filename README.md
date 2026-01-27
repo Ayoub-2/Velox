@@ -42,18 +42,23 @@ The actual security articles (the content of the app) are located in the [knowle
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- Docker & Docker Compose
+*   Docker & Docker Compose
+*   Node.js 18+ (for frontend dev)
 
-### Fast Start (Full Stack)
-The easiest way to run Velox (Frontend + DAST Engine) is via Docker Compose:
+### Quick Start
+1.  **Clone the repo**
+2.  **Start the stack**:
+    ```bash
+    docker-compose up --build
+    ```
+    *This starts the Web Portal (3000), Orchestrator (8000), Worker, Redis, ZAP, and Postgres.*
+3.  **Access the Dashboard**: `http://localhost:3000`
 
+### Database Migrations
+The app auto-initializes the DB on startup for dev. For production:
 ```bash
-docker-compose up --build
+docker-compose exec api alembic upgrade head
 ```
-
-Access the services:
-- **Web App**: http://localhost:3000
 - **DAST Dashboard**: http://localhost:3000/dast
 - **Orchestrator API**: http://localhost:8000/docs
 - **ZAP Proxy**: http://localhost:8090

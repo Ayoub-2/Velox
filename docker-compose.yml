@@ -26,9 +26,11 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - ZAP_URL=http://zap:8090
+      - DATABASE_URL=postgresql+asyncpg://velox:veloxpass@db:5432/velox_orchestrator
     depends_on:
       - redis
       - zap
+      - db
     volumes:
       - ./orchestrator:/app
 
@@ -39,9 +41,11 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
       - ZAP_URL=http://zap:8090
+      - DATABASE_URL=postgresql+asyncpg://velox:veloxpass@db:5432/velox_orchestrator
     depends_on:
       - redis
       - zap
+      - db
     volumes:
       - ./orchestrator:/app
 
@@ -51,9 +55,26 @@ services:
     ports:
       - "6379:6379"
 
+  # Database
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=velox
+      - POSTGRES_PASSWORD=veloxpass
+      - POSTGRES_DB=velox_orchestrator
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   # DAST Tool: OWASP ZAP (Headless)
   zap:
     image: zaproxy/zap-stable
+    shm_size: 2g # Required for Headless Browsers (Ajax Spider)
     command: zap.sh -daemon -host 0.0.0.0 -port 8090 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
     ports:
       - "8090:8090"
+
+volumes:
+  postgres_data:

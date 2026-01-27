@@ -1,125 +1,223 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from models import ScanRequest, ScanResponse, ScanStatus, ScanType
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc
+from sqlalchemy.orm import selectinload
+from models import ScanRequest, ScanResponse as ScanResponsePydantic, ScanStatus, ScanOptions
+from models_db import Scan, Finding, Target # DB Models
+from database import get_db
 from tasks import run_scan_task
 from celery.result import AsyncResult
-from typing import List, Dict
+from typing import List
 import uuid
 from datetime import datetime
 import logging
+import pandas as pd
+import io
+from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# In-memory store for demo purposes (Use DB in production)
-# Structure: {scan_id: ScanResponse}
-SCAN_DB: Dict[str, ScanResponse] = {}
+async def _get_scan_or_404(scan_id: str, db: AsyncSession) -> Scan:
+    result = await db.execute(select(Scan).options(selectinload(Scan.findings)).where(Scan.id == scan_id))
+    scan = result.scalars().first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    return scan
 
-@router.post("/scans", response_model=ScanResponse, status_code=201)
-async def create_scan(request: ScanRequest):
+async def _sync_scan_with_celery(scan: Scan, db: AsyncSession):
+    """
+    Checks Celery task status and updates DB if changed.
+    """
+    if scan.status in [ScanStatus.PENDING, ScanStatus.RUNNING]:
+        task_result = AsyncResult(scan.id)
+        
+        if task_result.ready():
+            try:
+                # Task finished
+                result_data = task_result.get()
+                
+                # Update Scan status
+                scan.status = ScanStatus.COMPLETED
+                scan.completed_at = datetime.utcnow()
+                scan.findings_count = len(result_data.get("findings", []))
+                
+                # Process Findings (Flatten JSON to DB Rows)
+                findings_data = result_data.get("findings", [])
+                critical = 0
+                high = 0
+                
+                for f in findings_data:
+                    # Normalize fields
+                    name = f.get('info', {}).get('name') or f.get('alert') or f.get('template') or 'Unknown'
+                    severity = str(f.get('info', {}).get('severity') or f.get('risk') or 'info').lower()
+                    desc = f.get('info', {}).get('description') or f.get('description') or ''
+                    loc = f.get('matched-at') or f.get('url') or '-'
+                    
+                    if severity == 'critical': critical += 1
+                    if severity == 'high': high += 1
+                    
+                    db_finding = Finding(
+                        scan_id=scan.id,
+                        tool=scan.scan_type,
+                        title=name,
+                        severity=severity,
+                        description=desc,
+                        location=loc
+                    )
+                    db.add(db_finding)
+                
+                scan.critical_count = critical
+                scan.high_count = high
+                
+                await db.commit()
+                await db.refresh(scan)
+                
+            except Exception as e:
+                logger.error(f"Scan {scan.id} failed during sync: {e}")
+                scan.status = ScanStatus.FAILED
+                await db.commit()
+                
+        elif task_result.state == "STARTED":
+             if scan.status != ScanStatus.RUNNING:
+                 scan.status = ScanStatus.RUNNING
+                 await db.commit()
+
+@router.post("/scans", response_model=ScanResponsePydantic, status_code=201)
+async def create_scan(request: ScanRequest, db: AsyncSession = Depends(get_db)):
     """
     Trigger a new security scan.
     """
     scan_id = str(uuid.uuid4())
     logger.info(f"Creating scan {scan_id} for {request.target_url}")
     
-    # Create initial record
-    scan_record = ScanResponse(
+    # 1. Resolve Target (Auto-create if new URL)
+    target_url_str = str(request.target_url)
+    result = await db.execute(select(Target).where(Target.url == target_url_str))
+    target = result.scalars().first()
+    
+    if not target:
+        target = Target(name=target_url_str, url=target_url_str)
+        db.add(target)
+        await db.commit()
+        await db.refresh(target)
+    
+    # 2. Create Scan Record
+    new_scan = Scan(
         id=scan_id,
-        target_url=str(request.target_url),
+        target_id=target.id,
         scan_type=request.scan_type,
         status=ScanStatus.PENDING,
-        created_at=datetime.utcnow()
+        options=request.options.model_dump(), # Store as JSON
     )
-    SCAN_DB[scan_id] = scan_record
+    db.add(new_scan)
+    await db.commit()
     
-    # Trigger Celery Task
-    task = run_scan_task.apply_async(
-        args=[scan_id, str(request.target_url), request.scan_type],
+    # 3. Trigger Celery Task
+    run_scan_task.apply_async(
+        args=[scan_id, target_url_str, request.scan_type, request.options.model_dump()],
         task_id=scan_id
     )
     
-    logger.info(f"Scan {scan_id} queued with Task ID {task.id}")
-    return scan_record
+    # 4. Return Pydantic Response
+    return ScanResponsePydantic(
+        id=new_scan.id,
+        target_url=target_url_str,
+        scan_type=new_scan.scan_type,
+        status=ScanStatus.PENDING,
+        created_at=new_scan.created_at,
+        options=request.options
+    )
 
-
-def _update_scan_from_celery(scan_record: ScanResponse):
-    """
-    Helper to sync Celery task status with local DB record.
-    """
-    if scan_record.status in [ScanStatus.PENDING, ScanStatus.RUNNING]:
-        task_result = AsyncResult(scan_record.id)
-        if task_result.ready():
-            try:
-                result_data = task_result.get()
-                # Update DB
-                scan_record.status = ScanStatus.COMPLETED
-                scan_record.result = result_data.get("findings")
-            except Exception as e:
-                scan_record.status = ScanStatus.FAILED
-                logger.error(f"Scan {scan_record.id} failed: {e}")
-        elif task_result.state == "STARTED":
-             scan_record.status = ScanStatus.RUNNING
-
-@router.get("/scans/{scan_id}", response_model=ScanResponse)
-async def get_scan_status(scan_id: str):
+@router.get("/scans/{scan_id}", response_model=ScanResponsePydantic)
+async def get_scan_status(scan_id: str, db: AsyncSession = Depends(get_db)):
     """
     Retrieve the status and results of a scan.
     """
-    if scan_id not in SCAN_DB:
-        raise HTTPException(status_code=404, detail="Scan not found")
-        
-    scan_record = SCAN_DB[scan_id]
-    _update_scan_from_celery(scan_record)
-             
-    return scan_record
+    scan = await _get_scan_or_404(scan_id, db)
+    
+    # Sync status
+    await _sync_scan_with_celery(scan, db)
+    
+    # Load relationships (target for url)
+    # simple query again to ensuring target is loaded or use lazy loading if config allowed
+    # Explicit join is better for async
+    result = await db.execute(select(Target).where(Target.id == scan.target_id))
+    target = result.scalars().first()
+    target_url = target.url if target else "unknown"
+    
+    # Format Findings for Response
+    formatted_findings = []
+    if scan.findings:
+        for f in scan.findings:
+            formatted_findings.append({
+                "info": {
+                    "name": f.title,
+                    "severity": f.severity,
+                    "description": f.description
+                },
+                "matched-at": f.location
+            })
+            
+    return ScanResponsePydantic(
+        id=scan.id,
+        target_url=target_url,
+        scan_type=scan.scan_type,
+        status=scan.status,
+        created_at=scan.created_at,
+        options=ScanOptions(**(scan.options or {})),
+        result=formatted_findings
+    )
 
-@router.get("/scans", response_model=List[ScanResponse])
-async def list_scans():
+@router.get("/scans", response_model=List[ScanResponsePydantic])
+async def list_scans(db: AsyncSession = Depends(get_db)):
     """
     List all triggered scans.
     """
-    # Sync status for all active scans
-    for scan in SCAN_DB.values():
-        _update_scan_from_celery(scan)
+    # Fetch top 50 recent scans
+    result = await db.execute(select(Scan).order_by(desc(Scan.created_at)).limit(50))
+    scans = result.scalars().all()
+    
+    response = []
+    for scan in scans:
+        await _sync_scan_with_celery(scan, db)
         
-    return list(SCAN_DB.values())
+        # Optimize: Batch load targets in real app
+        t_result = await db.execute(select(Target).where(Target.id == scan.target_id))
+        target = t_result.scalars().first()
+        target_url = target.url if target else "unknown"
+        
+        response.append(ScanResponsePydantic(
+            id=scan.id,
+            target_url=target_url,
+            scan_type=scan.scan_type,
+            status=scan.status,
+            created_at=scan.created_at,
+            options=ScanOptions(**(scan.options or {}))
+        ))
+        
+    return response
 
 @router.get("/scans/{scan_id}/export")
-async def export_scan_report(scan_id: str):
+async def export_scan_report(scan_id: str, db: AsyncSession = Depends(get_db)):
     """
     Export scan results as an Excel file.
     """
-    from fastapi.responses import StreamingResponse
-    import pandas as pd
-    import io
-
-    if scan_id not in SCAN_DB:
-        raise HTTPException(status_code=404, detail="Scan not found")
-        
-    scan = SCAN_DB[scan_id]
-    _update_scan_from_celery(scan)
+    scan = await _get_scan_or_404(scan_id, db)
+    await _sync_scan_with_celery(scan, db)
     
-    if not scan.result:
+    if not scan.findings:
         raise HTTPException(status_code=400, detail="No results to export")
         
     # Flatten findings for Excel
     rows = []
-    for finding in scan.result:
-        # Normalize fields between ZAP and Nuclei
-        name = finding.get('info', {}).get('name') or finding.get('alert') or finding.get('template') or 'Unknown'
-        severity = finding.get('info', {}).get('severity') or finding.get('risk') or 'info'
-        url = finding.get('matched-at') or finding.get('url') or '-'
-        description = finding.get('info', {}).get('description') or finding.get('description') or ''
-        solution = finding.get('info', {}).get('remediation') or finding.get('solution') or ''
-        extracted = str(finding.get('extracted-results', ''))
-        
+    for finding in scan.findings:
         rows.append({
-            "Severity": severity.upper(),
-            "Issue": name,
-            "Location": url,
-            "Description": description,
-            "Solution/Remediation": solution,
-            "Extracted Data": extracted
+            "Severity": finding.severity.upper(),
+            "Issue": finding.title,
+            "Location": finding.location,
+            "Description": finding.description,
+            "False Positive": finding.false_positive
         })
         
     df = pd.DataFrame(rows)
