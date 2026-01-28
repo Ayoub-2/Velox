@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-01-28 (Phase 2.2: Insight & Automation)
+
+### Added
+- **KPI Dashboard**: Frontend Visualizations (Charts) showing security trends, risk distribution, and scan statistics.
+- **Reporting**: PDF generation for scan results via `/scans/{id}/export?format=pdf`.
+- **Scheduled Scans**: Infrastructure support (Celery Beat) for periodic vulnerability scanning.
+- **Auth Configuration UI**: "Advanced Options" in scan form to input Headers/Cookies for authenticated scanning.
+- **Backend**: New `/stats` endpoints for dashboard aggregations.
+
+### Changed
+- **UI Rebranding**: Switched visual identity to "Warm Corporate" (Orange & Brown) theme via Tailwind variable overrides.
+- **Security Hotfix**: Implemented redaction for sensitive `auth_headers` in database execution history (retained only in memory for active tasks).
+- **Performance**: Optimized frontend build with Turbopack (`--turbo`).
+
 ## [0.5.0] - 2026-01-25 (Phase 2.1: Persistence)
 
 ### Added

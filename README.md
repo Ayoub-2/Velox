@@ -28,6 +28,12 @@ All project documentation is located in the [project-docs/](project-docs/) direc
 *   **Vulnerability Reporting**: detailed findings table with color-coded severity.
 *   **Hot Reloading**: Developer-friendly setup with instant UI updates.
 
+### Phase 2.2: Insight & Automation
+*   **KPI Dashboard**: Visual analytics for tracking security posture improvements over time.
+*   **Authenticated Scanning**: Support for Login-protected assets via Header/Cookie injection.
+*   **Executive Reporting**: One-click PDF export for stakeholders.
+*   **Scheduling**: Infrastructure ready for periodic assurance scans.
+
 ## Knowledge Base Content
 
 The actual security articles (the content of the app) are located in the [knowledge-base/](knowledge-base/) directory.
