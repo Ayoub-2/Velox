@@ -1,6 +1,8 @@
 import { getAllDocIds, getDocData } from '@/lib/docs';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateStaticParams() {
     const paths = getAllDocIds();
     return paths;

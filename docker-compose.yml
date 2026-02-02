@@ -1,93 +1,158 @@
 services:
-  # Frontend (Next.js)
+  # Frontend (Next.js) - Production Standalone
   web:
     build:
       context: .
-      target: deps
-    image: velox-web-dev
-    command: npm run dev
+      target: runner
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+    image: velox-web-prod
+    # Command is inherited from Dockerfile (node server.js)
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
     depends_on:
       - api
     volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
+      # Dynamic Knowledge Base Content (Read-Only)
+      - ./knowledge-base:/app/knowledge-base:ro
+      # Removed local node_modules mount for production stability
 
-  # Backend (FastAPI + Nuclei)
+      # Backend (FastAPI + Nuclei)
   api:
-    build: ./orchestrator
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    build:
+      context: ./orchestrator
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     environment:
       - REDIS_URL=redis://redis:6379/0
       - ZAP_URL=http://zap:8090
-      - DATABASE_URL=postgresql+asyncpg://velox:veloxpass@db:5432/velox_orchestrator
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
     depends_on:
-      - redis
-      - zap
-      - db
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
     volumes:
-      - ./orchestrator:/app
+      # Reports Persistence
+      # Reports Persistence
+      - ./reports:/app/reports
 
   # Worker (Celery)
   worker:
-    build: ./orchestrator
+    build:
+      context: ./orchestrator
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     command: celery -A celery_app worker --loglevel=info
     environment:
       - REDIS_URL=redis://redis:6379/0
       - ZAP_URL=http://zap:8090
-      - DATABASE_URL=postgresql+asyncpg://velox:veloxpass@db:5432/velox_orchestrator
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
     depends_on:
-      - redis
-      - zap
-      - db
-    volumes:
-      - ./orchestrator:/app
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
 
   # Periodic Task Scheduler (Celery Beat)
   beat:
-    build: ./orchestrator
+    build:
+      context: ./orchestrator
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
+        NO_PROXY: ${NO_PROXY}
     command: celery -A celery_app beat --loglevel=info
     environment:
       - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql+asyncpg://velox:veloxpass@db:5432/velox_orchestrator
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
-      - redis
-      - db
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+  # DB Backup Service (Auto-Archive)
+  db-backup:
+    image: postgres:15-alpine
+    container_name: velox-db-backup
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - ./orchestrator:/app
+      - ./backups:/backups
+    command: >
+      sh -c ' echo "Starting DB Backup Service..."; while true; do
+        echo "Creating backup...";
+        pg_dump -h db -U ${POSTGRES_USER} -d ${POSTGRES_DB} -f /backups/backup_$(date +%Y%m%d_%H%M%S).sql;
+        echo "Cleanup old backups (>7 days)...";
+        find /backups -type f -mtime +7 -delete;
+        echo "Sleeping for 24h...";
+        sleep 86400;
+      done '
+    depends_on:
+      db:
+        condition: service_healthy
 
   # Job Queue Broker
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   # Database
   db:
     image: postgres:15-alpine
     restart: always
     environment:
-      - POSTGRES_USER=velox
-      - POSTGRES_PASSWORD=veloxpass
-      - POSTGRES_DB=velox_orchestrator
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # DAST Tool: OWASP ZAP (Headless)
   zap:
     image: zaproxy/zap-stable
-    shm_size: 2g # Required for Headless Browsers (Ajax Spider)
+    shm_size: 2g
     command: zap.sh -daemon -host 0.0.0.0 -port 8090 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
     ports:
       - "8090:8090"
+    environment:
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=${NO_PROXY}
 
 volumes:
   postgres_data:

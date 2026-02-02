@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,11 +53,15 @@ async def health_check():
     Verifies that the service and its dependencies (Redis) are reachable.
     """
     try:
-        # TODO: Add Redis Ping here
-        return {"status": "healthy", "service": settings.APP_NAME}
+        # Real Redis Ping
+        import redis.asyncio as redis
+        r = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+        await r.ping()
+        await r.close()
+        return {"status": "healthy", "service": settings.APP_NAME, "redis": "connected"}
     except Exception as e:
         logger.error(f"Health check failed: {e}")
-        raise HTTPException(status_code=503, detail="Service Unhealthy")
+        raise HTTPException(status_code=503, detail=f"Service Unhealthy: {str(e)}")
 
 @app.get("/")
 async def root():

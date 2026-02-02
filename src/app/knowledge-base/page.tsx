@@ -4,6 +4,8 @@ import StackAwareArticleList from '@/components/StackAwareArticleList';
 import { getSortedDocsData } from '@/lib/docs';
 import { DocData } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
     title: 'Knowledge Base - Velox Security',
     description: 'Browse security patterns including authentication, API security, input validation, access control, and more.',

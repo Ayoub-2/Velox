@@ -45,6 +45,16 @@ The actual security articles (the content of the app) are located in the [knowle
 *   [Secrets Management](knowledge-base/secrets-management.md)
 *   ...and more.
 
+## 🚀 Deployment
+
+### Standard Deployment
+```bash
+docker compose up --build
+```
+
+### Enterprise / RHEL 9
+For strict environments with SElinux and Proxies, please refer to the [RHEL 9 Installation Guide](docs/INSTALL_RHEL9.md).
+
 ## 🚀 Getting Started
 
 ### Prerequisites

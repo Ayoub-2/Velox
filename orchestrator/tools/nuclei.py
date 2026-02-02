@@ -32,6 +32,7 @@ class NucleiWrapper:
             "-j",            # JSON output
             "-silent",       # Only output results
             "-nm",           # No metadata in output (cleaner parsing)
+            "-disable-update", # Disable automatic template updates
         ]
         
         # 1. Performance Tuning
