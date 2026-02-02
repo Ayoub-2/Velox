@@ -7,15 +7,6 @@ Welcome to the **Velox** project.
 
 **Velox** is a comprehensive **Security by Design Knowledge Base** and toolset for developers. The goal is to embed security practices directly into the Software Development Life Cycle (SDLC), guiding developers from the initial conception of a feature through to its deployment.
 
-## Documentation
-
-All project documentation is located in the [project-docs/](project-docs/) directory.
-
-*   [Vision & Need](project-docs/VISION.md)
-*   [Architecture](project-docs/ARCHITECTURE.md)
-*   [Roadmap](project-docs/ROADMAP.md)
-*   [Release Strategy](project-docs/RELEASE_STRATEGY.md)
-
 ## Key Features
 
 ### Phase 1: Knowledge Base

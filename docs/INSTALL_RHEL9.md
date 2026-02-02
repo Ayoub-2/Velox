@@ -62,7 +62,7 @@ If you see "Permission denied" errors on mounted volumes:
 chcon -Rt svirt_sandbox_file_t ./knowledge-base
 
 # Set context for Reports
-chcon -Rt svirt_sandbox_file_t ./project-docs/reports
+chcon -Rt svirt_sandbox_file_t ./reports
 
 # Set context for backups
 chcon -Rt svirt_sandbox_file_t ./backups
