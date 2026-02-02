@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2026-02-02 (Production Release)
+
+### Production Hardening
+- **Air-Gapped Runtime**: Nuclei templates (`v2.9.8`) and dependencies are now baked into the Docker image. Runtime auto-updates and external network calls (unless via Proxy) are disabled.
+- **Proxy Support**: Added `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` support to both Build and Runtime environments via `docker-compose.yml` ARGs.
+- **Security**: Added strict CSP headers, removed `unsafe-eval`, and externalized all credentials to `.env`.
+- **Infrastructure**: Removed development tools (hot-reload), enabled `standalone` builds, and implemented Real Redis Health Checks.
+- **Data Archival**: Added a sidecar `db-backup` service for daily automated database dumps (`pg_dump`) to `./backups`.
+
+### Documentation
+- Added `docs/INSTALL_RHEL9.md` for Enterprise/RHEL deployment instructions.
+- Added `project-docs/qa/release_v1.0.0.md` QA Report.
+
 ## [0.6.0] - 2026-01-28 (Phase 2.2: Insight & Automation)
 
 ### Added

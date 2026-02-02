@@ -1,4 +1,5 @@
 # Velox: Security by Design Knowledge Base
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 
 Welcome to the **Velox** project.
 
