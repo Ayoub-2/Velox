@@ -107,4 +107,44 @@ Velox follows a hybrid architecture:
 - **Content Security Policy (CSP)**: Strict configuration preventing XSS.
 - **Security Headers**: HSTS, X-Frame-Options, Permissions-Policy.
 - **Input Validation**: Zod-based validation for all API inputs.
-- **Secure Execution**: Scanners run in isolated containers.
+
+## 🧹 Maintenance & Cleanup
+
+If you need to reset your environment or clean up existing configurations (e.g., after testing or before a fresh production install), follow these steps.
+
+### 1. Reset Docker Environment (Wipe Data)
+To stop all containers and **permanently delete** variable data (Database, Redis, etc):
+```bash
+# Stop containers and remove volumes (Wipes DB)
+docker compose down -v
+
+# Remove orphaned containers
+docker container prune -f
+```
+
+### 2. Deep Clean (Images & Cache)
+If you encounter build issues or want to free up space:
+```bash
+# Remove unused images and build cache
+docker system prune -a -f
+```
+
+### 3. Local Config Reset
+To reset your local configuration to defaults:
+```bash
+# Remove local environment secrets
+rm .env
+
+# Remove local dependencies (if installed)
+rm -rf node_modules
+```
+
+### 4. Database Restore
+If you need to restore from a backup after a cleanup:
+1.  Ensure `db-backup` service is running.
+2.  Locate your backup file in `./backups`.
+3.  Restore using:
+    ```bash
+    cat ./backups/your_backup.sql | docker compose exec -T db psql -U velox_prod -d velox_production
+    ```
+

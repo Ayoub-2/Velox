@@ -4,6 +4,12 @@ This guide details the procedure for deploying Velox on Red Hat Enterprise Linux
 
 ## 1. Prerequisites (Offline/Proxy)
 
+> **Quick Start**: You can use the helper script to auto-configure Firewall and SELinux:
+> ```bash
+> sudo chmod +x scripts/quick_config_rhel9.sh
+> sudo ./scripts/quick_config_rhel9.sh
+> ```
+
 ### System Requirements
 - **OS**: RHEL 9.x
 - **Docker**: Version 24+ (Rootless supported but requires extra config)
