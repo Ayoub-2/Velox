@@ -66,7 +66,7 @@ class NucleiWrapper:
                 capture_output=True,
                 text=True,
                 check=False, # We handle errors manually
-                timeout=1200 # 20 minute timeout for authenticated/slower scans
+                timeout=3600 # 1 hour timeout for authenticated/slower scans
             )
             
             if result.returncode != 0:

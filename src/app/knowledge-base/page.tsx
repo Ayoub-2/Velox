@@ -68,15 +68,15 @@ export default function KnowledgeBase() {
     const allDocs: DocData[] = getSortedDocsData();
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 py-8 sm:py-12 px-4 sm:px-6 lg:px-8 text-white">
+        <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 py-8 sm:py-12 px-4 sm:px-6 lg:px-8 text-slate-900 dark:text-white transition-colors duration-300">
             <div className="max-w-7xl mx-auto">
                 <div className="text-center relative z-10">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-2xl -z-10 opacity-30 blur-3xl bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mix-blend-screen pointer-events-none"></div>
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-2xl -z-10 opacity-30 blur-3xl bg-gradient-to-r from-blue-300 to-cyan-300 dark:from-blue-500 dark:to-cyan-500 rounded-full mix-blend-screen pointer-events-none"></div>
 
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-4 sm:mb-6">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-emerald-600 dark:from-blue-400 dark:to-emerald-400 mb-4 sm:mb-6">
                         Velox Knowledge Base
                     </h1>
-                    <p className="mt-2 sm:mt-3 max-w-2xl mx-auto text-base sm:text-lg lg:text-xl text-gray-300 mb-8 sm:mb-10">
+                    <p className="mt-2 sm:mt-3 max-w-2xl mx-auto text-base sm:text-lg lg:text-xl text-slate-600 dark:text-gray-300 mb-8 sm:mb-10">
                         Essential security patterns, requirements, and strategies.
                     </p>
                     <Search docs={allDocs} />

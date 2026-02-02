@@ -4,10 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import StackSelector from '@/components/StackSelector';
 import NavDropdown from '@/components/NavDropdown';
+import ThemeToggle from '@/components/ThemeToggle';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Navbar() {
     const pathname = usePathname();
     const showStackSelector = pathname?.startsWith('/knowledge-base');
+    const { t } = useLanguage();
 
     return (
         <nav
@@ -24,15 +28,15 @@ export default function Navbar() {
                             aria-label="Velox home"
                         >
                             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold text-lg">V</div>
-                            <span className="text-lg font-bold text-white tracking-tight">Velox</span>
+                            <span className="text-lg font-bold text-white tracking-tight">{t('navbar.brand')}</span>
                         </Link>
                         <div className="hidden md:flex gap-6 items-center">
                             <Link
                                 href="/knowledge-base"
                                 className={`text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 ${pathname?.startsWith('/knowledge-base') ? 'text-white' : 'text-slate-300 hover:text-white'}`}
-                                aria-label="Knowledge Base"
+                                aria-label={t('navbar.kb')}
                             >
-                                Knowledge Base
+                                {t('navbar.kb')}
                             </Link>
 
                             <NavDropdown
@@ -49,15 +53,19 @@ export default function Navbar() {
                                 href="/dast"
                                 className={`text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 ${pathname?.startsWith('/dast') ? 'text-white' : 'text-slate-300 hover:text-white'}`}
                             >
-                                DAST Engine
+                                {t('navbar.scans')}
                             </Link>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
                         {showStackSelector && <StackSelector />}
+                        <LanguageSwitcher />
+                        <ThemeToggle />
+                        {/* 
                         <div className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20">
-                            <span className="text-xs font-semibold text-green-400">Phase 2: Orchestration</span>
+                            <span className="text-xs font-semibold text-green-400">Phase 3: Live</span>
                         </div>
+                        */}
                     </div>
                 </div>
             </div>

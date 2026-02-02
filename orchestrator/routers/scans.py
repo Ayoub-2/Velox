@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
@@ -84,12 +84,12 @@ async def _sync_scan_with_celery(scan: Scan, db: AsyncSession):
                  await db.commit()
 
 @router.post("/scans", response_model=ScanResponsePydantic, status_code=201)
-async def create_scan(request: ScanRequest, db: AsyncSession = Depends(get_db)):
+async def create_scan(request: ScanRequest, x_session_id: str | None = Header(None), db: AsyncSession = Depends(get_db)):
     """
     Trigger a new security scan.
     """
     scan_id = str(uuid.uuid4())
-    logger.info(f"Creating scan {scan_id} for {request.target_url}")
+    logger.info(f"Creating scan {scan_id} for {request.target_url} (Session: {x_session_id})")
     
     # 1. Resolve Target (Auto-create if new URL)
     target_url_str = str(request.target_url)
@@ -112,6 +112,7 @@ async def create_scan(request: ScanRequest, db: AsyncSession = Depends(get_db)):
     new_scan = Scan(
         id=scan_id,
         target_id=target.id,
+        session_id=x_session_id, # Store Session ID
         scan_type=request.scan_type,
         status=ScanStatus.PENDING,
         options=db_options, # Store REDACTED options
@@ -176,12 +177,17 @@ async def get_scan_status(scan_id: str, db: AsyncSession = Depends(get_db)):
     )
 
 @router.get("/scans", response_model=List[ScanResponsePydantic])
-async def list_scans(db: AsyncSession = Depends(get_db)):
+async def list_scans(x_session_id: str | None = Header(None), db: AsyncSession = Depends(get_db)):
     """
     List all triggered scans.
     """
     # Fetch top 50 recent scans
-    result = await db.execute(select(Scan).order_by(desc(Scan.created_at)).limit(50))
+    query = select(Scan).order_by(desc(Scan.created_at)).limit(50)
+    
+    if x_session_id:
+        query = query.where(Scan.session_id == x_session_id)
+        
+    result = await db.execute(query)
     scans = result.scalars().all()
     
     response = []

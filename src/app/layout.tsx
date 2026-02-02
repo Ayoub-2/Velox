@@ -4,6 +4,8 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { StackProvider } from "@/lib/stack-context";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,19 +30,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#0f172a" />
       </head>
-      <body className={`${inter.className} min-h-screen flex flex-col bg-slate-900 text-white`}>
-        <StackProvider>
-          <Navbar />
-          <div className="flex-grow pt-16">
-            {children}
-          </div>
-          <Footer />
-        </StackProvider>
+      <body className={`${inter.className} min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-300`}>
+        <LanguageProvider>
+          <ThemeProvider>
+            <StackProvider>
+              <Navbar />
+              <div className="flex-grow pt-16">
+                {children}
+              </div>
+              <Footer />
+            </StackProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

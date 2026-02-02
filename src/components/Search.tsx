@@ -13,7 +13,7 @@ interface SearchProps {
 export default function Search({ docs }: SearchProps) {
     const [query, setQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
-    const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+
     const { selectedStack } = useStack();
     const router = useRouter();
 
@@ -23,11 +23,11 @@ export default function Search({ docs }: SearchProps) {
         return ['All', ...Array.from(unique)];
     }, [docs]);
 
-    const difficulties = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+
 
     // Memoize filtered results
     const filteredDocs = useMemo(() => {
-        if (query === '' && selectedCategory === 'All' && selectedDifficulty === 'All') return [];
+        if (query === '' && selectedCategory === 'All') return [];
 
         const searchLower = query.toLowerCase();
 
@@ -46,12 +46,11 @@ export default function Search({ docs }: SearchProps) {
             // 3. Category Filter
             const matchesCategory = selectedCategory === 'All' || doc.category === selectedCategory;
 
-            // 4. Difficulty Filter
-            const matchesDifficulty = selectedDifficulty === 'All' || doc.difficulty === selectedDifficulty;
 
-            return matchesSearch && matchesStack && matchesCategory && matchesDifficulty;
+
+            return matchesSearch && matchesStack && matchesCategory;
         });
-    }, [query, docs, selectedCategory, selectedDifficulty, selectedStack]);
+    }, [query, docs, selectedCategory, selectedStack]);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -88,18 +87,11 @@ export default function Search({ docs }: SearchProps) {
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
 
-                <select
-                    value={selectedDifficulty}
-                    onChange={(e) => setSelectedDifficulty(e.target.value)}
-                    className="bg-slate-800/50 border border-slate-700/50 text-slate-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none hover:bg-slate-800 transition-colors"
-                >
-                    <option value="All">Any Difficulty</option>
-                    {difficulties.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+
             </div>
 
             {/* Results Dropdown */}
-            {(query !== '' || selectedCategory !== 'All' || selectedDifficulty !== 'All') && (
+            {(query !== '' || selectedCategory !== 'All') && (
                 <div
                     className="absolute z-30 w-full mt-2 bg-gray-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-700/50 max-h-96 overflow-y-auto ring-1 ring-black/5"
                     role="region"
@@ -117,14 +109,7 @@ export default function Search({ docs }: SearchProps) {
                                         <div className="font-semibold text-gray-200 group-hover:text-blue-300 transition-colors">
                                             {doc.title}
                                         </div>
-                                        {doc.difficulty && (
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full border ${doc.difficulty === 'Beginner' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                    doc.difficulty === 'Intermediate' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                                        'bg-red-500/10 text-red-400 border-red-500/20'
-                                                }`}>
-                                                {doc.difficulty}
-                                            </span>
-                                        )}
+
                                     </div>
                                     <div className="text-sm text-gray-400 truncate mt-0.5">
                                         {doc.description}

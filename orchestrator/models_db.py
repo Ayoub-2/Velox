@@ -19,6 +19,7 @@ class Scan(Base):
     
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     target_id = Column(String, ForeignKey("targets.id"), nullable=True) # Optional for now (backward compatibility)
+    session_id = Column(String, nullable=True, index=True) # For session isolation
     scan_type = Column(String, nullable=False)
     status = Column(String, default="pending")
     options = Column(JSON, nullable=True) # Store ScanOptions

@@ -45,6 +45,51 @@
     ]
   },
   {
+    "id": "android-storage-0",
+    "title": "Android Secure Storage - Snippet 1",
+    "description": "Code example from Android Secure Storage",
+    "language": "kotlin",
+    "code": "val masterKey = MasterKey.Builder(context)\r\n    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)\r\n    .build()\r\n\r\nval sharedPreferences = EncryptedSharedPreferences.create(\r\n    context,\r\n    \"secret_shared_prefs\",\r\n    masterKey,\r\n    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,\r\n    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM\r\n)\r\n\r\n// Use like normal SharedPreferences\r\nsharedPreferences.edit().putString(\"auth_token\", token).apply()",
+    "articleId": "android-storage",
+    "articleTitle": "Android Secure Storage",
+    "tags": [
+      "android",
+      "storage",
+      "encryption",
+      "keystore"
+    ]
+  },
+  {
+    "id": "android-storage-1",
+    "title": "Android Secure Storage - Snippet 2",
+    "description": "Code example from Android Secure Storage",
+    "language": "kotlin",
+    "code": "val keyGenerator = KeyGenerator.getInstance(\r\n    KeyProperties.KEY_ALGORITHM_AES, \"AndroidKeyStore\"\r\n)\r\nkeyGenerator.init(\r\n    KeyGenParameterSpec.Builder(\r\n        \"MyKeyAlias\",\r\n        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT\r\n    )\r\n    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)\r\n    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)\r\n    .build()\r\n)\r\nval key = keyGenerator.generateKey()",
+    "articleId": "android-storage",
+    "articleTitle": "Android Secure Storage",
+    "tags": [
+      "android",
+      "storage",
+      "encryption",
+      "keystore"
+    ]
+  },
+  {
+    "id": "android-storage-2",
+    "title": "Android Secure Storage - Snippet 3",
+    "description": "Code example from Android Secure Storage",
+    "language": "kotlin",
+    "code": "val factory = SupportFactory(SQLiteDatabase.getBytes(\"my-secret-passphrase\".toCharArray()))\r\nval db = Room.databaseBuilder(context, MyDatabase::class.java, \"secure.db\")\r\n    .openHelperFactory(factory)\r\n    .build()",
+    "articleId": "android-storage",
+    "articleTitle": "Android Secure Storage",
+    "tags": [
+      "android",
+      "storage",
+      "encryption",
+      "keystore"
+    ]
+  },
+  {
     "id": "api-security-0",
     "title": "API Security - Snippet 1",
     "description": "Code example from API Security",
@@ -218,6 +263,96 @@
       "graphql",
       "oauth",
       "rate-limiting"
+    ]
+  },
+  {
+    "id": "cicd-pipeline-security-0",
+    "title": "CI/CD Pipeline Security - Snippet 1",
+    "description": "Code example from CI/CD Pipeline Security",
+    "language": "yaml",
+    "code": "steps:\r\n  - name: Checkout code\r\n    uses: actions/checkout@v3\r\n    with:\r\n      fetch-depth: 0\r\n  - name: TruffleHog OSS\r\n    uses: trufflesecurity/trufflehog@main\r\n    with:\r\n      path: ./\r\n      base: ${{ github.event.repository.default_branch }}\r\n      head: ${{ github.event.pull_request.head.sha }}\r\n      extra_args: --debug --only-verified",
+    "articleId": "cicd-pipeline-security",
+    "articleTitle": "CI/CD Pipeline Security",
+    "tags": [
+      "cicd",
+      "pipeline",
+      "secrets",
+      "supply-chain"
+    ]
+  },
+  {
+    "id": "cicd-pipeline-security-1",
+    "title": "CI/CD Pipeline Security - Snippet 2",
+    "description": "Code example from CI/CD Pipeline Security",
+    "language": "yaml",
+    "code": "# In GitHub Actions\r\npermissions:\r\n  contents: read\r\n  packages: write\r\n  # potentially invasive permissions disabled\r\n  issues: none\r\n  checks: none",
+    "articleId": "cicd-pipeline-security",
+    "articleTitle": "CI/CD Pipeline Security",
+    "tags": [
+      "cicd",
+      "pipeline",
+      "secrets",
+      "supply-chain"
+    ]
+  },
+  {
+    "id": "cicd-pipeline-security-2",
+    "title": "CI/CD Pipeline Security - Snippet 3",
+    "description": "Code example from CI/CD Pipeline Security",
+    "language": "bash",
+    "code": "# In CI: Sign the image\r\ncosign sign --key k8s://my-secret/cosign.key $IMAGE_URI\r\n\r\n# In Cluster (Kyverno/Gatekeeper): Verify signature\r\n# Deny deployment if signature is missing or invalid",
+    "articleId": "cicd-pipeline-security",
+    "articleTitle": "CI/CD Pipeline Security",
+    "tags": [
+      "cicd",
+      "pipeline",
+      "secrets",
+      "supply-chain"
+    ]
+  },
+  {
+    "id": "container-hardening-0",
+    "title": "Container Hardening - Snippet 1",
+    "description": "Code example from Container Hardening",
+    "language": "dockerfile",
+    "code": "# Dockerfile\r\nFROM node:18-alpine\r\n\r\nWORKDIR /app\r\nCOPY . .\r\n\r\n# Create non-root user\r\nRUN addgroup -S velox && adduser -S velox -G velox\r\n\r\n# Switch user\r\nUSER velox\r\n\r\nCMD [\"node\", \"server.js\"]",
+    "articleId": "container-hardening",
+    "articleTitle": "Container Hardening",
+    "tags": [
+      "docker",
+      "kubernetes",
+      "container",
+      "hardening"
+    ]
+  },
+  {
+    "id": "container-hardening-1",
+    "title": "Container Hardening - Snippet 2",
+    "description": "Code example from Container Hardening",
+    "language": "dockerfile",
+    "code": "FROM gcr.io/distroless/nodejs18-debian11\r\nCOPY --from=build /app /app\r\nWORKDIR /app\r\nCMD [\"server.js\"]",
+    "articleId": "container-hardening",
+    "articleTitle": "Container Hardening",
+    "tags": [
+      "docker",
+      "kubernetes",
+      "container",
+      "hardening"
+    ]
+  },
+  {
+    "id": "container-hardening-2",
+    "title": "Container Hardening - Snippet 3",
+    "description": "Code example from Container Hardening",
+    "language": "yaml",
+    "code": "# Kubernetes Pod Security Context\r\nsecurityContext:\r\n  readOnlyRootFilesystem: true\r\n  runAsNonRoot: true\r\n  runAsUser: 1000",
+    "articleId": "container-hardening",
+    "articleTitle": "Container Hardening",
+    "tags": [
+      "docker",
+      "kubernetes",
+      "container",
+      "hardening"
     ]
   },
   {
@@ -533,6 +668,38 @@
       "logging",
       "monitoring",
       "observability"
+    ]
+  },
+  {
+    "id": "mobile-api-security-0",
+    "title": "Mobile API Security - Snippet 1",
+    "description": "Code example from Mobile API Security",
+    "language": "java",
+    "code": "String hostname = \"api.velox.security\";\r\nCertificatePinner certificatePinner = new CertificatePinner.Builder()\r\n    .add(hostname, \"sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\")\r\n    .build();\r\n\r\nOkHttpClient client = new OkHttpClient.Builder()\r\n    .certificatePinner(certificatePinner)\r\n    .build();",
+    "articleId": "mobile-api-security",
+    "articleTitle": "Mobile API Security",
+    "tags": [
+      "mobile",
+      "android",
+      "ios",
+      "ssl-pinning",
+      "oauth"
+    ]
+  },
+  {
+    "id": "mobile-api-security-1",
+    "title": "Mobile API Security - Snippet 2",
+    "description": "Code example from Mobile API Security",
+    "language": "swift",
+    "code": "let trustKitConfig = [\r\n    kTSKSwizzleNetworkDelegates: false,\r\n    kTSKPinnedDomains: [\r\n        \"api.velox.security\": [\r\n            kTSKPublicKeyHashes: [\r\n                \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\",\r\n                \"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=\"\r\n            ],\r\n            kTSKEnforcePinning: true\r\n        ]\r\n    ]\r\n]\r\nTrustKit.initSharedInstance(withConfiguration:trustKitConfig)",
+    "articleId": "mobile-api-security",
+    "articleTitle": "Mobile API Security",
+    "tags": [
+      "mobile",
+      "android",
+      "ios",
+      "ssl-pinning",
+      "oauth"
     ]
   },
   {

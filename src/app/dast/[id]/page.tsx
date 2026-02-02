@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiClient, ScanResponse } from '@/lib/api';
+import { Scorecard } from '@/components/dast/Scorecard';
+import { KBLink } from '@/components/dast/KBLink';
 
 export default function ScanDetailsPage() {
     const params = useParams();
@@ -18,6 +20,22 @@ export default function ScanDetailsPage() {
             loadScan(id);
         }
     }, [id]);
+
+    // Auto-Download Effect
+    useEffect(() => {
+        if (scan?.status === 'completed' && scan.result && !localStorage.getItem(`downloaded_${scan.id}`)) {
+            const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL}/scans/${scan.id}/export?format=pdf`;
+
+            // Allow time for component to render "Completed" state visually before redirecting/downloading
+            const timer = setTimeout(() => {
+                // Use invisible iframe or window location
+                window.location.href = downloadUrl;
+                localStorage.setItem(`downloaded_${scan.id}`, 'true');
+            }, 1000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [scan?.status, scan?.id]);
 
     const loadScan = async (scanId: string) => {
         try {
@@ -50,6 +68,19 @@ export default function ScanDetailsPage() {
         );
     }
 
+    // Calculate Stats for Scorecard
+    const stats = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+    if (scan.result) {
+        scan.result.forEach((f: any) => {
+            const s = (f.info?.severity || f.risk || 'info').toLowerCase();
+            if (s === 'critical') stats.critical++;
+            else if (s === 'high') stats.high++;
+            else if (s === 'medium') stats.medium++;
+            else if (s === 'low') stats.low++;
+            else stats.info++;
+        });
+    }
+
     return (
         <div className="min-h-screen bg-slate-900 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
@@ -74,7 +105,7 @@ export default function ScanDetailsPage() {
 
                                 {scan.status === 'completed' && scan.result && scan.result.length > 0 && (
                                     <a
-                                        href={`${process.env.NEXT_PUBLIC_API_URL}/scans/${id}/export`}
+                                        href={`${process.env.NEXT_PUBLIC_API_URL}/scans/${id}/export?format=pdf`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-lg shadow-emerald-900/20"
@@ -89,6 +120,11 @@ export default function ScanDetailsPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Scorecard (Only for completed scans) */}
+                {scan.status === 'completed' && (
+                    <Scorecard stats={stats} />
+                )}
 
                 {/* Findings Table */}
                 <div className="bg-slate-800/30 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
@@ -225,6 +261,9 @@ export default function ScanDetailsPage() {
                                                         ) : (
                                                             <div className="text-xs text-slate-500 italic">No specific remediation available</div>
                                                         )}
+
+                                                        {/* Recommendation Link */}
+                                                        <KBLink query={group._name} />
                                                     </td>
                                                 </tr>
                                             );
@@ -239,3 +278,4 @@ export default function ScanDetailsPage() {
         </div>
     );
 }
+

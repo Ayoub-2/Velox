@@ -20,6 +20,26 @@ export interface ScanResponse {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
+// Session Management (Client-Side Only)
+const getSessionId = () => {
+    if (typeof window === 'undefined') return ''; // Server-side safety
+    let sid = localStorage.getItem('velox_session_id');
+    if (!sid) {
+        sid = Math.random().toString(36).substring(2) + Date.now().toString(36);
+        localStorage.setItem('velox_session_id', sid);
+    }
+    return sid;
+};
+
+const getHeaders = (base: Record<string, string> = {}) => {
+    const headers = { ...base };
+    const sid = getSessionId();
+    if (sid) {
+        headers['X-Session-ID'] = sid;
+    }
+    return headers;
+};
+
 export const apiClient = {
     async triggerScan(targetUrl: string, scanType: string = 'nuclei', options?: Record<string, any>): Promise<ScanResponse> {
         const payload: ScanRequest = {
@@ -30,7 +50,7 @@ export const apiClient = {
 
         const res = await fetch(`${API_BASE_URL}/scans`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(payload),
         });
         if (!res.ok) {
@@ -41,7 +61,9 @@ export const apiClient = {
     },
 
     async getScans(): Promise<ScanResponse[]> {
-        const res = await fetch(`${API_BASE_URL}/scans`);
+        const res = await fetch(`${API_BASE_URL}/scans`, {
+            headers: getHeaders()
+        });
         if (!res.ok) {
             const error = await res.json().catch(() => ({}));
             throw new Error(error.detail || 'Failed to fetch scans');
@@ -50,7 +72,7 @@ export const apiClient = {
     },
 
     async getScan(id: string): Promise<ScanResponse> {
-        const res = await fetch(`${API_BASE_URL}/scans/${id}`);
+        const res = await fetch(`${API_BASE_URL}/scans/${id}`, { headers: getHeaders() });
         if (!res.ok) {
             const error = await res.json().catch(() => ({}));
             throw new Error(error.detail || 'Failed to fetch scan details');
@@ -59,13 +81,13 @@ export const apiClient = {
     },
 
     async getDashboardStats(): Promise<any> {
-        const res = await fetch(`${API_BASE_URL}/stats/summary`);
+        const res = await fetch(`${API_BASE_URL}/stats/summary`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to fetch stats');
         return res.json();
     },
 
     async getFindingTrend(days: number = 7): Promise<any[]> {
-        const res = await fetch(`${API_BASE_URL}/stats/trend?days=${days}`);
+        const res = await fetch(`${API_BASE_URL}/stats/trend?days=${days}`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to fetch trend');
         return res.json();
     }
