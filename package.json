@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/extract-snippets.js && next dev",
-    "build": "node scripts/extract-snippets.js && next build",
+    "dev": "node scripts/extract-snippets.js && next dev --webpack",
+    "build": "node scripts/extract-snippets.js && next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
