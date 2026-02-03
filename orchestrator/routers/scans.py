@@ -224,9 +224,24 @@ async def export_scan_report(scan_id: str, format: str = "xlsx", db: AsyncSessio
         pass
         
     if format == "pdf":
+         from types import SimpleNamespace
          from utils.report_gen import generate_pdf_report
-         pdf_bytes = generate_pdf_report(scan, scan.findings)
-         
+
+         # Build a minimal scan data object expected by report generator
+         result = await db.execute(select(Target).where(Target.id == scan.target_id))
+         target = result.scalars().first()
+         target_url = target.url if target else "unknown"
+
+         scan_data = SimpleNamespace(
+             target_url=target_url,
+             created_at=scan.created_at,
+             scan_type=scan.scan_type,
+             critical_count=getattr(scan, 'critical_count', 0),
+             high_count=getattr(scan, 'high_count', 0)
+         )
+
+         pdf_bytes = generate_pdf_report(scan_data, scan.findings)
+
          filename = f"velox_scan_{scan_id}.pdf"
          return StreamingResponse(
             io.BytesIO(pdf_bytes),
