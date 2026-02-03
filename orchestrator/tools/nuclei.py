@@ -88,9 +88,18 @@ class NucleiWrapper:
                 timeout=3600 # 1 hour timeout for authenticated/slower scans
             )
             
+            # Detailed diagnostics for troubleshooting
+            logger.debug(f"Nuclei exit code: {result.returncode}")
+            logger.debug(f"Nuclei stdout: {result.stdout}")
+            logger.debug(f"Nuclei stderr: {result.stderr}")
+
             if result.returncode != 0:
-                logger.error(f"Nuclei Execution Failed: {result.stderr}")
-                raise Exception(f"Nuclei failed with code {result.returncode}. Stderr: {result.stderr}")
+                logger.error(
+                    f"Nuclei Execution Failed (code {result.returncode}). Stderr: {result.stderr}. Stdout: {result.stdout}"
+                )
+                raise Exception(
+                    f"Nuclei failed with code {result.returncode}. Stderr: {result.stderr}. Stdout: {result.stdout}"
+                )
 
             findings = []
             for line in result.stdout.splitlines():
