@@ -24,7 +24,11 @@ export default function ScanDetailsPage() {
     // Auto-Download Effect
     useEffect(() => {
         if (scan?.status === 'completed' && scan.result && !localStorage.getItem(`downloaded_${scan.id}`)) {
-            const downloadUrl = `${process.env.NEXT_PUBLIC_API_URL}/scans/${scan.id}/export?format=pdf`;
+            const API_BASE = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL !== 'undefined')
+                ? process.env.NEXT_PUBLIC_API_URL
+                : '/api/v1';
+            const buildApiUrl = (path: string) => `${API_BASE.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+            const downloadUrl = buildApiUrl(`/scans/${scan.id}/export?format=pdf`);
 
             // Allow time for component to render "Completed" state visually before redirecting/downloading
             const timer = setTimeout(() => {
