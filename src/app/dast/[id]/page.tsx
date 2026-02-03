@@ -11,6 +11,11 @@ export default function ScanDetailsPage() {
     const params = useParams();
     const id = params?.id as string;
 
+    const API_BASE = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL !== 'undefined')
+        ? process.env.NEXT_PUBLIC_API_URL
+        : '/api/v1';
+    const buildApiUrl = (path: string) => `${API_BASE.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+
     const [scan, setScan] = useState<ScanResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -24,10 +29,6 @@ export default function ScanDetailsPage() {
     // Auto-Download Effect
     useEffect(() => {
         if (scan?.status === 'completed' && scan.result && !localStorage.getItem(`downloaded_${scan.id}`)) {
-            const API_BASE = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL !== 'undefined')
-                ? process.env.NEXT_PUBLIC_API_URL
-                : '/api/v1';
-            const buildApiUrl = (path: string) => `${API_BASE.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
             const downloadUrl = buildApiUrl(`/scans/${scan.id}/export?format=pdf`);
 
             // Allow time for component to render "Completed" state visually before redirecting/downloading
@@ -108,8 +109,8 @@ export default function ScanDetailsPage() {
                                 </div>
 
                                 {scan.status === 'completed' && scan.result && scan.result.length > 0 && (
-                                    <a
-                                        href={`${process.env.NEXT_PUBLIC_API_URL}/scans/${id}/export?format=pdf`}
+                                        <a
+                                        href={buildApiUrl(`/scans/${scan.id}/export?format=pdf`)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-lg shadow-emerald-900/20"
