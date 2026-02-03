@@ -17,8 +17,15 @@ class NucleiWrapper:
     def __init__(self, binary_path: str = settings.NUCLEI_PATH):
         self.binary_path = binary_path
 
-        # Common templates path used in some images; we'll only use it if present.
-        self.templates_path = "/home/appuser/nuclei-templates"
+        # Candidate templates paths (build time may place templates under root)
+        self.templates_candidates = [
+            "/home/appuser/nuclei-templates",
+            "/root/nuclei-templates",
+            "/root/.nuclei-templates",
+            "/root/.nuclei",
+            "/root/.local/share/nuclei-templates",
+        ]
+        self.templates_path = None
 
     def run_scan(self, target: str, options: ScanOptions) -> List[Dict[str, Any]]:
         """
@@ -39,18 +46,24 @@ class NucleiWrapper:
             target,
         ]
 
-        # Only pass templates dir if it exists (avoid failing when path is absent)
-        if os.path.isdir(self.templates_path):
+        # Pick the first existing templates dir from candidates
+        for p in self.templates_candidates:
+            if os.path.isdir(p):
+                self.templates_path = p
+                break
+
+        if self.templates_path:
+            logger.info(f"Using nuclei templates path: {self.templates_path}")
             command.extend(["-t", self.templates_path])
         else:
-            logger.warning(f"Nuclei templates path not found at {self.templates_path}; using default templates location")
+            logger.warning("No nuclei templates path found in candidates; using binary default templates location")
 
         # Common flags
         command.extend([
             "-j",            # JSON output
             "-silent",       # Only output results
             "-nm",           # No metadata in output (cleaner parsing)
-            "-disable-update", # Disable automatic template updates
+            "--disable-update", # Disable automatic template updates (long form)
         ])
         
         # 1. Performance Tuning
