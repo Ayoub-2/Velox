@@ -36,16 +36,26 @@ RUN curl -L "https://github.com/projectdiscovery/nuclei/releases/download/${NUCL
     mv nuclei /usr/local/bin/ && \
     rm nuclei.zip
 
+# Create non-root user for security (early so we can place templates in its home)
+RUN adduser --disabled-password --gecos "" appuser
+
 # Bake Nuclei Templates (Offline support)
-# We run this during build so the container has them pre-installed.
-RUN nuclei -update-templates
+# Run the binary (as root) to populate default template locations, then copy
+# any installed templates into /home/appuser/nuclei-templates and set ownership.
+RUN /usr/local/bin/nuclei -update-templates || true && \
+    mkdir -p /home/appuser/nuclei-templates && \
+    for p in /root/.nuclei-templates /root/.nuclei /root/.local/share/nuclei-templates /root/nuclei-templates; do \
+        if [ -d "$p" ]; then \
+            cp -r "$p"/* /home/appuser/nuclei-templates/ 2>/dev/null || true; \
+        fi; \
+    done && \
+    chown -R appuser:appuser /home/appuser/nuclei-templates || true
 
 # Install Python Dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos "" appuser
+# Switch to non-root user
 USER appuser
 
 # Copy Application Code
