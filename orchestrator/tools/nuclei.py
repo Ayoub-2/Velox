@@ -17,6 +17,9 @@ class NucleiWrapper:
     def __init__(self, binary_path: str = settings.NUCLEI_PATH):
         self.binary_path = binary_path
 
+        # Common templates path used in some images; we'll only use it if present.
+        self.templates_path = "/home/appuser/nuclei-templates"
+
     def run_scan(self, target: str, options: ScanOptions) -> List[Dict[str, Any]]:
         """
         Runs a specific Nuclei scan against the target with provided options.
@@ -24,16 +27,31 @@ class NucleiWrapper:
         """
         logger.info(f"Starting Nuclei scan for: {target} | Options: {options}")
         
+        # Validate binary exists and is executable
+        if not os.path.isfile(self.binary_path) or not os.access(self.binary_path, os.X_OK):
+            logger.error(f"Nuclei binary not found or not executable at: {self.binary_path}")
+            raise Exception(f"Nuclei binary not found or not executable at: {self.binary_path}")
+
         # Base Command
         command = [
             self.binary_path,
-            "-u", target,
-            "-t", "/home/appuser/nuclei-templates", # Ensure this path is correct in Docker
+            "-u",
+            target,
+        ]
+
+        # Only pass templates dir if it exists (avoid failing when path is absent)
+        if os.path.isdir(self.templates_path):
+            command.extend(["-t", self.templates_path])
+        else:
+            logger.warning(f"Nuclei templates path not found at {self.templates_path}; using default templates location")
+
+        # Common flags
+        command.extend([
             "-j",            # JSON output
             "-silent",       # Only output results
             "-nm",           # No metadata in output (cleaner parsing)
             "-disable-update", # Disable automatic template updates
-        ]
+        ])
         
         # 1. Performance Tuning
         command.extend(["-rl", str(options.rate_limit)])
