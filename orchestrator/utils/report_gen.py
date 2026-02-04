@@ -1,5 +1,16 @@
 from fpdf import FPDF
 from datetime import datetime
+import re
+
+
+def _break_long_words(s: str, maxlen: int = 80) -> str:
+    """
+    Insert spaces into very long uninterrupted strings so FPDF can wrap them.
+    """
+    if not s:
+        return s
+    pattern = r"(\S{" + str(maxlen) + r",})"
+    return re.sub(pattern, lambda m: ' '.join([m.group(0)[i:i+maxlen] for i in range(0, len(m.group(0)), maxlen)]), s)
 
 class PDFReport(FPDF):
     def header(self):
@@ -18,9 +29,13 @@ def generate_pdf_report(scan_data, findings):
     
     # Metadata
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Target: {scan_data.target_url or 'Unknown'}", ln=1)
-    pdf.cell(200, 10, txt=f"Date: {scan_data.created_at.strftime('%Y-%m-%d %H:%M')}", ln=1)
-    pdf.cell(200, 10, txt=f"Scan Type: {scan_data.scan_type}", ln=1)
+    target_text = _break_long_words(str(scan_data.target_url or 'Unknown'), 100)
+    date_text = scan_data.created_at.strftime('%Y-%m-%d %H:%M') if getattr(scan_data, 'created_at', None) else ''
+    scan_type_text = _break_long_words(str(getattr(scan_data, 'scan_type', '') or ''), 80)
+
+    pdf.cell(200, 10, txt=f"Target: {target_text}", ln=1)
+    pdf.cell(200, 10, txt=f"Date: {date_text}", ln=1)
+    pdf.cell(200, 10, txt=f"Scan Type: {scan_type_text}", ln=1)
     pdf.ln(10)
     
     # Summary
@@ -41,7 +56,7 @@ def generate_pdf_report(scan_data, findings):
         pdf.cell(200, 10, txt="No findings detected.", ln=1)
     
     for f in findings:
-        severity = f.severity.upper()
+        severity = (f.severity or '').upper()
         
         # Color coding title
         if severity == 'CRITICAL':
@@ -52,13 +67,16 @@ def generate_pdf_report(scan_data, findings):
             pdf.set_text_color(0, 0, 0)
             
         pdf.set_font("Arial", 'B', size=11)
-        pdf.cell(0, 8, txt=f"[{severity}] {f.title}", ln=1)
+        title_text = _break_long_words(str(f.title or 'Untitled'), 100)
+        pdf.cell(0, 8, txt=f"[{severity}] {title_text}", ln=1)
         
         pdf.set_text_color(0, 0, 0)
         pdf.set_font("Arial", size=10)
         
-        description = (f.description or "No description").encode('latin-1', 'replace').decode('latin-1')
-        location = f"Location: {f.location}"
+        raw_desc = str(f.description or "No description")
+        description = _break_long_words(raw_desc, 120).encode('latin-1', 'replace').decode('latin-1')
+        location = _break_long_words(str(f.location or '-'), 120)
+        location = f"Location: {location}"
         
         pdf.multi_cell(0, 5, txt=location)
         pdf.multi_cell(0, 5, txt=description)
