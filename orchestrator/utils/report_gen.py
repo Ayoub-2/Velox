@@ -37,7 +37,10 @@ class PDFReport(FPDF):
 
 def generate_pdf_report(scan_data, findings):
     pdf = PDFReport()
+    # Ensure automatic page breaks and calculate usable width
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
+    usable_w = pdf.w - pdf.l_margin - pdf.r_margin
     
     # Metadata
     pdf.set_font("Arial", size=12)
@@ -45,17 +48,17 @@ def generate_pdf_report(scan_data, findings):
     date_text = scan_data.created_at.strftime('%Y-%m-%d %H:%M') if getattr(scan_data, 'created_at', None) else ''
     scan_type_text = _break_long_words(str(getattr(scan_data, 'scan_type', '') or ''), 80)
 
-    pdf.cell(200, 10, txt=f"Target: {target_text}", ln=1)
-    pdf.cell(200, 10, txt=f"Date: {date_text}", ln=1)
-    pdf.cell(200, 10, txt=f"Scan Type: {scan_type_text}", ln=1)
+    pdf.multi_cell(usable_w, 6, txt=f"Target: {target_text}")
+    pdf.multi_cell(usable_w, 6, txt=f"Date: {date_text}")
+    pdf.multi_cell(usable_w, 6, txt=f"Scan Type: {scan_type_text}")
     pdf.ln(10)
     
     # Summary
     pdf.set_font("Arial", 'B', size=14)
-    pdf.cell(200, 10, txt="Executive Summary", ln=1)
+    pdf.multi_cell(usable_w, 8, txt="Executive Summary")
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt=f"Critical Findings: {scan_data.critical_count}", ln=1)
-    pdf.cell(200, 10, txt=f"High Findings: {scan_data.high_count}", ln=1)
+    pdf.multi_cell(usable_w, 6, txt=f"Critical Findings: {scan_data.critical_count}")
+    pdf.multi_cell(usable_w, 6, txt=f"High Findings: {scan_data.high_count}")
     pdf.ln(10)
     
     # Findings Details
@@ -80,7 +83,8 @@ def generate_pdf_report(scan_data, findings):
             
         pdf.set_font("Arial", 'B', size=11)
         title_text = _break_long_words(str(f.title or 'Untitled'), 100)
-        pdf.cell(0, 8, txt=f"[{severity}] {title_text}", ln=1)
+        # use multi_cell so long titles wrap within usable width
+        pdf.multi_cell(usable_w, 8, txt=f"[{severity}] {title_text}")
         
         pdf.set_text_color(0, 0, 0)
         pdf.set_font("Arial", size=10)
