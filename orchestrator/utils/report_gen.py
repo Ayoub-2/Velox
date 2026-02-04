@@ -2,7 +2,10 @@ from fpdf import FPDF
 from datetime import datetime
 import re
 import os
+import logging
 from fpdf.errors import FPDFException
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -137,18 +140,14 @@ def generate_pdf_report(scan_data, findings):
 
             pdf.ln(6)
 
-        # Output PDF bytes in a unicode-safe way
+        # Output PDF bytes
         out = pdf.output(dest='S')
+        # In Python 3, FPDF output() with dest='S' returns bytes
         if isinstance(out, bytes):
-            pdf_bytes = out
+            return out
         else:
-            # try utf-8 first, fallback to latin-1
-            try:
-                pdf_bytes = out.encode('utf-8')
-            except Exception:
-                pdf_bytes = out.encode('latin-1', 'replace')
-
-        return pdf_bytes
+            # Fallback for older FPDF versions that might return str
+            return out.encode('latin-1', 'replace')
     except Exception as e:
         # On any PDF generation error, return a minimal PDF explaining the failure
         try:
