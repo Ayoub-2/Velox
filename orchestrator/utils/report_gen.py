@@ -2,6 +2,7 @@ from fpdf import FPDF
 from datetime import datetime
 import re
 import os
+from fpdf.errors import FPDFException
 
 
 def _break_long_words(s: str, maxlen: int = 80) -> str:
@@ -64,21 +65,42 @@ def generate_pdf_report(scan_data, findings):
         date_text = scan_data.created_at.strftime('%Y-%m-%d %H:%M') if getattr(scan_data, 'created_at', None) else ''
         scan_type_text = _break_long_words(str(getattr(scan_data, 'scan_type', '') or ''), 80)
 
-        pdf.multi_cell(usable_w, 6, txt=f"Target: {target_text}")
-        pdf.multi_cell(usable_w, 6, txt=f"Date: {date_text}")
-        pdf.multi_cell(usable_w, 6, txt=f"Scan Type: {scan_type_text}")
+        # helper to write text robustly
+        def safe_multi_cell(p, w, h, txt):
+            try:
+                p.multi_cell(w, h, txt=txt)
+                return
+            except FPDFException:
+                # recursively split text until it fits
+                if not txt:
+                    return
+                if len(txt) == 1:
+                    # single character too wide -> replace with placeholder
+                    ch = txt
+                    if p.get_string_width(ch) > w:
+                        p.multi_cell(w, h, txt='?')
+                    else:
+                        p.multi_cell(w, h, txt=ch)
+                    return
+                mid = len(txt) // 2
+                safe_multi_cell(p, w, h, txt[:mid])
+                safe_multi_cell(p, w, h, txt[mid:])
+
+        safe_multi_cell(pdf, usable_w, 6, f"Target: {target_text}")
+        safe_multi_cell(pdf, usable_w, 6, f"Date: {date_text}")
+        safe_multi_cell(pdf, usable_w, 6, f"Scan Type: {scan_type_text}")
         pdf.ln(6)
 
         pdf.set_font(default_font, 'B', size=14)
-        pdf.multi_cell(usable_w, 8, txt="Executive Summary")
+        safe_multi_cell(pdf, usable_w, 8, txt="Executive Summary")
         pdf.set_font(default_font, size=12)
-        pdf.multi_cell(usable_w, 6, txt=f"Critical Findings: {getattr(scan_data, 'critical_count', 0)}")
-        pdf.multi_cell(usable_w, 6, txt=f"High Findings: {getattr(scan_data, 'high_count', 0)}")
+        safe_multi_cell(pdf, usable_w, 6, txt=f"Critical Findings: {getattr(scan_data, 'critical_count', 0)}")
+        safe_multi_cell(pdf, usable_w, 6, txt=f"High Findings: {getattr(scan_data, 'high_count', 0)}")
         pdf.ln(8)
 
         # Findings Details
         pdf.set_font(default_font, 'B', size=14)
-        pdf.multi_cell(usable_w, 8, txt="Detailed Findings")
+        safe_multi_cell(pdf, usable_w, 8, txt="Detailed Findings")
         pdf.set_font(default_font, size=10)
 
         if not findings:
@@ -97,7 +119,7 @@ def generate_pdf_report(scan_data, findings):
 
             pdf.set_font(default_font, 'B', size=11)
             title_text = _break_long_words(str(getattr(f, 'title', 'Untitled')), 100)
-            pdf.multi_cell(usable_w, 8, txt=f"[{severity}] {title_text}")
+            safe_multi_cell(pdf, usable_w, 8, txt=f"[{severity}] {title_text}")
 
             pdf.set_text_color(0, 0, 0)
             pdf.set_font(default_font, size=10)
@@ -110,14 +132,14 @@ def generate_pdf_report(scan_data, findings):
 
             indent = 12
             # location as an indented smaller block
-            pdf.multi_cell(usable_w - indent, 5, txt=location)
+            safe_multi_cell(pdf, usable_w - indent, 5, txt=location)
 
             # description paragraphs
             for paragraph in safe_desc.splitlines() or ['']:
                 if paragraph.strip() == '':
                     pdf.ln(2)
                 else:
-                    pdf.multi_cell(usable_w - indent, 5, txt=paragraph)
+                    safe_multi_cell(pdf, usable_w - indent, 5, txt=paragraph)
 
             pdf.ln(6)
 
