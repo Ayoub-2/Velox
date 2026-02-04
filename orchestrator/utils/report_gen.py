@@ -18,9 +18,10 @@ def _break_long_words(s: str, maxlen: int = 80) -> str:
         if len(token) <= maxlen:
             parts.append(token)
         else:
-            # break long token into chunks
+            # break long token into chunks and join with zero-width space
+            # so FPDF can wrap without inserting visible spaces at line ends
             chunks = [token[i:i+maxlen] for i in range(0, len(token), maxlen)]
-            parts.append(' '.join(chunks))
+            parts.append('\u200b'.join(chunks))
     return ''.join(parts)
 
 class PDFReport(FPDF):
