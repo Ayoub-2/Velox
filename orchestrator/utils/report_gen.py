@@ -23,6 +23,30 @@ def _find_system_ttf() -> str | None:
             return p
     return None
 
+def _break_long_words(text: str, max_word_length: int = 80) -> str:
+    """
+    Break long words with hyphens to fit in PDF columns.
+    Preserves line breaks and handles sentences.
+    """
+    if not text:
+        return text
+    
+    lines = []
+    for line in text.split('\n'):
+        # Split by spaces but preserve the spacing
+        words = line.split(' ')
+        broken_words = []
+        for word in words:
+            if len(word) > max_word_length:
+                # Insert soft hyphen or break the word
+                parts = [word[i:i+max_word_length] for i in range(0, len(word), max_word_length)]
+                broken_words.append('-\n'.join(parts))
+            else:
+                broken_words.append(word)
+        lines.append(' '.join(broken_words))
+    
+    return '\n'.join(lines)
+
 class PDFReport(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 12)
@@ -36,6 +60,9 @@ class PDFReport(FPDF):
 
 def generate_pdf_report(scan_data, findings):
     try:
+        logger.info(f"Starting PDF generation for target: {getattr(scan_data, 'target_url', 'unknown')}")
+        logger.info(f"Findings count: {len(findings) if findings else 0}")
+        
         pdf = PDFReport()
         # Try to register a unicode-capable TTF font if available
         ttf = _find_system_ttf()
@@ -45,15 +72,19 @@ def generate_pdf_report(scan_data, findings):
                 pdf.add_font('Custom', '', ttf, uni=True)
                 default_font = 'Custom'
                 use_ttf = True
-            except Exception:
+                logger.info(f"Using custom font: {ttf}")
+            except Exception as font_err:
+                logger.warning(f"Could not load custom font: {font_err}, falling back to Arial")
                 default_font = 'Arial'
         else:
+            logger.info("No TTF font found, using Arial")
             default_font = 'Arial'
 
         # Ensure automatic page breaks and calculate usable width
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         usable_w = pdf.w - pdf.l_margin - pdf.r_margin
+        logger.info(f"PDF page usable width: {usable_w}")
 
         # Set base font
         pdf.set_font(default_font, size=12)
@@ -68,7 +99,8 @@ def generate_pdf_report(scan_data, findings):
             try:
                 p.multi_cell(w, h, txt=txt)
                 return
-            except FPDFException:
+            except FPDFException as e:
+                logger.warning(f"FPDF error for text length {len(txt)}: {e}, splitting...")
                 # recursively split text until it fits
                 if not txt:
                     return
@@ -102,6 +134,8 @@ def generate_pdf_report(scan_data, findings):
         pdf.set_font(default_font, size=10)
         if not findings:
             pdf.multi_cell(usable_w, 6, txt="No findings detected.")
+        else:
+            logger.info(f"Processing {len(findings)} findings")
 
         for f in findings:
             severity = (getattr(f, 'severity', '') or '').upper()
@@ -144,11 +178,15 @@ def generate_pdf_report(scan_data, findings):
         out = pdf.output(dest='S')
         # In Python 3, FPDF output() with dest='S' returns bytes
         if isinstance(out, bytes):
+            logger.info(f"PDF generated successfully, size: {len(out)} bytes")
             return out
         else:
             # Fallback for older FPDF versions that might return str
+            logger.warning("FPDF output returned string, encoding to bytes")
             return out.encode('latin-1', 'replace')
+            
     except Exception as e:
+        logger.error(f"PDF generation failed: {e}", exc_info=True)
         # On any PDF generation error, return a minimal PDF explaining the failure
         try:
             err_pdf = PDFReport()
@@ -161,6 +199,9 @@ def generate_pdf_report(scan_data, findings):
             err_pdf.multi_cell(err_w, 6, txt="Report generation failed")
             err_pdf.multi_cell(err_w, 6, txt=err_msg)
             out = err_pdf.output(dest='S')
-            return out.encode('latin-1', 'replace') if isinstance(out, str) else out
-        except Exception:
+            result = out.encode('latin-1', 'replace') if isinstance(out, str) else out
+            logger.info(f"Error PDF generated, size: {len(result)} bytes")
+            return result
+        except Exception as err2:
+            logger.error(f"Could not even generate error PDF: {err2}")
             raise

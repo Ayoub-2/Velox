@@ -218,10 +218,9 @@ async def export_scan_report(scan_id: str, format: str = "xlsx", db: AsyncSessio
     scan = await _get_scan_or_404(scan_id, db)
     await _sync_scan_with_celery(scan, db)
     
-    # Load findings explicitly if not loaded
-    if not scan.findings:
-        # In a real app we might reload or check if lazy loaded attached
-        pass
+    # Ensure findings are loaded
+    findings_list = list(scan.findings) if scan.findings else []
+    logger.info(f"Export for scan {scan_id}: format={format}, findings_count={len(findings_list)}")
         
     if format == "pdf":
          from types import SimpleNamespace
@@ -240,7 +239,12 @@ async def export_scan_report(scan_id: str, format: str = "xlsx", db: AsyncSessio
              high_count=getattr(scan, 'high_count', 0)
          )
 
-         pdf_bytes = generate_pdf_report(scan_data, scan.findings)
+         try:
+             pdf_bytes = generate_pdf_report(scan_data, findings_list)
+             logger.info(f"PDF generated successfully: {len(pdf_bytes)} bytes")
+         except Exception as e:
+             logger.error(f"PDF generation error: {e}", exc_info=True)
+             raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
 
          filename = f"velox_scan_{scan_id}.pdf"
          return StreamingResponse(
@@ -250,12 +254,12 @@ async def export_scan_report(scan_id: str, format: str = "xlsx", db: AsyncSessio
         )
     
     # Default to XLSX
-    if not scan.findings:
+    if not findings_list:
         raise HTTPException(status_code=400, detail="No results to export")
         
     # Flatten findings for Excel
     rows = []
-    for finding in scan.findings:
+    for finding in findings_list:
         rows.append({
             "Severity": finding.severity.upper(),
             "Issue": finding.title,
