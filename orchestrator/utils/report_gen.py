@@ -102,7 +102,6 @@ def generate_pdf_report(scan_data, findings):
         pdf.set_font(default_font, 'B', size=14)
         safe_multi_cell(pdf, usable_w, 8, txt="Detailed Findings")
         pdf.set_font(default_font, size=10)
-
         if not findings:
             pdf.multi_cell(usable_w, 6, txt="No findings detected.")
 
@@ -159,10 +158,14 @@ def generate_pdf_report(scan_data, findings):
         # On any PDF generation error, return a minimal PDF explaining the failure
         try:
             err_pdf = PDFReport()
+            err_pdf.set_auto_page_break(auto=True, margin=15)
             err_pdf.add_page()
             err_pdf.set_font('Arial', size=12)
-            err_pdf.multi_cell(0, 6, txt="Report generation failed")
-            err_pdf.multi_cell(0, 6, txt=str(e))
+            err_w = err_pdf.w - err_pdf.l_margin - err_pdf.r_margin
+            # Truncate error message to avoid width issues
+            err_msg = str(e)[:200]
+            err_pdf.multi_cell(err_w, 6, txt="Report generation failed")
+            err_pdf.multi_cell(err_w, 6, txt=err_msg)
             out = err_pdf.output(dest='S')
             return out.encode('latin-1', 'replace') if isinstance(out, str) else out
         except Exception:
