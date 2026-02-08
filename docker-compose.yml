@@ -9,7 +9,8 @@ services:
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
     image: velox-web-prod
-    # Command is inherited from Dockerfile (node server.js)
+    # Wrapper script handles SSL if certs exist
+    command: node /app/ssl_proxy.js
     ports:
       - "3000:3000"
     environment:
@@ -22,8 +23,9 @@ services:
     volumes:
       # Dynamic Knowledge Base Content (Read-Only)
       - ./knowledge-base:/app/knowledge-base:ro
-      # Removed local node_modules mount for production stability
-
+      # SSL Integration (No Rebuild)
+      - ./scripts/ssl_proxy.js:/app/ssl_proxy.js:ro
+      - ./certs:/app/certs:ro
       # Backend (FastAPI + Nuclei)
   api:
     build:

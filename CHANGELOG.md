@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Production Hardening
 - **Network Verification**: Added `scripts/verify_connectivity.sh` for offline verification of DAST container connectivity (Ping/DNS) without external dependencies.
 - **Operational Tools**: Added `collect_diagnostics.sh` (Logs/Stats bundle), `monitor_tasks.sh` (Queue Health), `force_backup.sh` (Manual DB Dump), and `setup_cron_logs.sh` (Automated Diagnostics).
-- **RHEL9 Config**: Added `scripts/quick_config_rhel9.sh` for automated host firewall (Ports 3000/8000) and SELinux setup.
+- **SSL Support**: Added `scripts/generate_ssl_certs.sh` and `scripts/ssl_proxy.js` to enable conditional HTTPS on the Web Frontend (Port 3000) without image rebuilds.
 - **Documentation**: Added `docs/TROUBLESHOOTING_NETWORK.md` covering air-gapped network troubleshooting (DNS overrides, firewall zones).
 
 ## [1.0.0] - 2026-02-02 (Production Release)
