@@ -213,73 +213,40 @@ async def list_scans(x_session_id: str | None = Header(None), db: AsyncSession =
 @router.get("/scans/{scan_id}/export")
 async def export_scan_report(scan_id: str, format: str = "xlsx", db: AsyncSession = Depends(get_db)):
     """
-    Export scan results as Excel or PDF.
+    Export scan results as Excel (.xlsx).
     """
     scan = await _get_scan_or_404(scan_id, db)
     await _sync_scan_with_celery(scan, db)
     
     # Ensure findings are loaded
     findings_list = list(scan.findings) if scan.findings else []
-    logger.info(f"Export for scan {scan_id}: format={format}, findings_count={len(findings_list)}")
-        
-    if format == "pdf":
-         from types import SimpleNamespace
-         from utils.report_gen import generate_pdf_report
+    logger.info(f"Export for scan {scan_id}: findings_count={len(findings_list)}")
 
-         # Build a minimal scan data object expected by report generator
-         result = await db.execute(select(Target).where(Target.id == scan.target_id))
-         target = result.scalars().first()
-         target_url = target.url if target else "unknown"
+    from utils.report_gen import generate_excel_report
+    from types import SimpleNamespace
 
-         scan_data = SimpleNamespace(
-             target_url=target_url,
-             created_at=scan.created_at,
-             scan_type=scan.scan_type,
-             critical_count=getattr(scan, 'critical_count', 0),
-             high_count=getattr(scan, 'high_count', 0)
-         )
+    # Build scan data object
+    result = await db.execute(select(Target).where(Target.id == scan.target_id))
+    target = result.scalars().first()
+    target_url = target.url if target else "unknown"
 
-         try:
-             pdf_bytes = generate_pdf_report(scan_data, findings_list)
-             logger.info(f"PDF generated successfully: {len(pdf_bytes)} bytes")
-         except Exception as e:
-             logger.error(f"PDF generation error: {e}", exc_info=True)
-             raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+    scan_data = SimpleNamespace(
+        target_url=target_url,
+        created_at=scan.created_at,
+        scan_type=scan.scan_type,
+        critical_count=getattr(scan, 'critical_count', 0),
+        high_count=getattr(scan, 'high_count', 0)
+    )
 
-         filename = f"velox_scan_{scan_id}.pdf"
-         return StreamingResponse(
-            io.BytesIO(pdf_bytes),
-            media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-    
-    # Default to XLSX
-    if not findings_list:
-        raise HTTPException(status_code=400, detail="No results to export")
-        
-    # Flatten findings for Excel
-    rows = []
-    for finding in findings_list:
-        rows.append({
-            "Severity": finding.severity.upper(),
-            "Issue": finding.title,
-            "Location": finding.location,
-            "Description": finding.description,
-            "False Positive": finding.false_positive
-        })
-        
-    df = pd.DataFrame(rows)
-    
-    # Create Excel buffer
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Findings')
-        
-    output.seek(0)
+    try:
+        excel_bytes = generate_excel_report(scan_data, findings_list)
+    except Exception as e:
+        logger.error(f"Export generation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
     
     filename = f"velox_scan_{scan_id}.xlsx"
     return StreamingResponse(
-        output,
+        io.BytesIO(excel_bytes),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
