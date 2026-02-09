@@ -29,7 +29,7 @@ export default function ScanDetailsPage() {
     // Auto-Download Effect
     useEffect(() => {
         if (scan?.status === 'completed' && scan.result && !localStorage.getItem(`downloaded_${scan.id}`)) {
-            const downloadUrl = buildApiUrl(`/scans/${scan.id}/export?format=pdf`);
+            const downloadUrl = buildApiUrl(`/scans/${scan.id}/export`);
 
             // Allow time for component to render "Completed" state visually before redirecting/downloading
             const timer = setTimeout(() => {
@@ -110,7 +110,7 @@ export default function ScanDetailsPage() {
 
                                 {scan.status === 'completed' && scan.result && scan.result.length > 0 && (
                                         <a
-                                        href={buildApiUrl(`/scans/${scan.id}/export?format=pdf`)}
+                                        href={buildApiUrl(`/scans/${scan.id}/export`)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-lg shadow-emerald-900/20"
