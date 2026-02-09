@@ -2,12 +2,12 @@
   "name": "velox",
   "version": "1.0.0",
   "private": true,
-  "scripts": {
+ "scripts": {
     "dev": "node scripts/extract-snippets.js && next dev --webpack",
-    "build": "node scripts/extract-snippets.js && next build --webpack",
-    "start": "next start",
+    "build": "node scripts/extract-snippets.js && next build --webpack && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public",
+    "start": "node .next/standalone/server.js",
     "lint": "eslint"
-  },
+},
   "dependencies": {
     "gray-matter": "^4.0.3",
     "next": "16.1.1",
