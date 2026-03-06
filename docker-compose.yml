@@ -13,6 +13,9 @@ services:
     command: node /app/ssl_proxy.js
     ports:
       - "3000:3000"
+    dns:
+      - ${VELOX_INTERNAL_DNS:-8.8.8.8}
+      - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
     environment:
       - NEXT_PUBLIC_API_URL=/api/v1
       - HTTP_PROXY=${HTTP_PROXY}
@@ -34,7 +37,17 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    command: |
+      sh -c "
+      nuclei -ut > /tmp/nuclei_update.log 2>&1 &
+      exec uvicorn main:app --host 0.0.0.0 --port 8000
+      "
+
+    ports:
+      - "8000:8000"
+    dns:
+      - ${VELOX_INTERNAL_DNS:-8.8.8.8}
+      - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
     environment:
       - REDIS_URL=redis://redis:6379/0
       - ZAP_URL=http://zap:8090
@@ -49,8 +62,13 @@ services:
         condition: service_healthy
     volumes:
       # Reports Persistence
-      # Reports Persistence
       - ./reports:/app/reports
+      # SSL Certificates (Optional)
+      - ./certs:/app/certs:ro
+      # Code patch (No Rebuild)
+      - ./orchestrator/tools/nuclei.py:/app/tools/nuclei.py:ro
+      - ./orchestrator/routers/scans.py:/app/routers/scans.py:ro
+      - ./orchestrator/utils/report_gen.py:/app/utils/report_gen.py:ro
 
   # Worker (Celery)
   worker:
@@ -60,7 +78,10 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    command: celery -A celery_app worker --loglevel=info
+    command: sh -c "nuclei -ut > /tmp/nuclei_worker_update.log 2>&1 & exec celery -A celery_app worker --loglevel=info"
+    dns:
+      - ${VELOX_INTERNAL_DNS:-8.8.8.8}
+      - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
     environment:
       - REDIS_URL=redis://redis:6379/0
       - ZAP_URL=http://zap:8090
@@ -73,6 +94,8 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
+    volumes:
+      - ./orchestrator/tools/nuclei.py:/app/tools/nuclei.py:ro
 
   # Periodic Task Scheduler (Celery Beat)
   beat:
@@ -83,6 +106,9 @@ services:
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
     command: celery -A celery_app beat --loglevel=info --schedule /tmp/celerybeat-schedule
+    dns:
+      - ${VELOX_INTERNAL_DNS:-8.8.8.8}
+      - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
     environment:
       - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
@@ -91,6 +117,8 @@ services:
         condition: service_healthy
       db:
         condition: service_healthy
+    volumes:
+      - ./orchestrator/tools/nuclei.py:/app/tools/nuclei.py:ro
 
   # DB Backup Service (Auto-Archive)
   db-backup:
@@ -149,6 +177,9 @@ services:
     command: zap.sh -daemon -host 0.0.0.0 -port 8090 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
     ports:
       - "8090:8090"
+    dns:
+      - ${VELOX_INTERNAL_DNS:-8.8.8.8}
+      - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
     environment:
       - HTTP_PROXY=${HTTP_PROXY}
       - HTTPS_PROXY=${HTTPS_PROXY}

@@ -2,9 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-03-06 (Red Hat DNS & Export Styling)
+
+### Added
+- **Red Hat/Enterprise DNS Support**: Added `scripts/setup_rh_dns.sh` to dynamically extract internal host DNS servers (`nmcli` / `systemd-resolved`) and inject them into Docker Compose via `.env`.
+- **Security Documentation**: Added `project-docs/analysis/redhat_dns_proposal.md`, `project-docs/security/redhat_dns_threat_model.md`, and `project-docs/qa/qa_report_redhat_dns.md` for the DNS integration.
+- **Excel Report Formatting**: Enhanced the Excel export with `openpyxl` styles, adding bold colored headers, cell borders, and dynamic row highlighting based on vulnerability severity (e.g., Red for Critical, Yellow for High).
+
+### Fixed
+- **Nuclei Offline Execution**: Fixed an issue where the Celery worker failed to run Nuclei (Code 2) by replacing the invalid `-disable-update` flag with `-duc` in `orchestrator/tools/nuclei.py`.
+- **API Container Updates**: Hot-patched the `api` and `worker` containers via `docker-compose.yml` volume mounts to apply Python code fixes without rebuilding offline images.
+
+
 ## [1.0.1] - 2026-02-03 (Network Hardening)
 
 ### Production Hardening
+- **Red Hat/Enterprise DNS**: Added `scripts/setup_rh_dns.sh` to extract RHEL host-level internal DNS resolvers and inject them into Velox Docker containers (`docker-compose.yml` `dns:` property) for automated internal service discovery.
 - **Network Verification**: Added `scripts/verify_connectivity.sh` for offline verification of DAST container connectivity (Ping/DNS) without external dependencies.
 - **Operational Tools**: Added `collect_diagnostics.sh` (Logs/Stats bundle), `monitor_tasks.sh` (Queue Health), `force_backup.sh` (Manual DB Dump), and `setup_cron_logs.sh` (Automated Diagnostics).
 - **Reporting**: Replaced PDF export with multi-sheet Excel (`.xlsx`) reports containing a Summary dashboard and detailed Findings list.

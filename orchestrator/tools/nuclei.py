@@ -63,6 +63,7 @@ class NucleiWrapper:
             "-j",            # JSON output
             "-silent",       # Only output results
             "-nm",           # No metadata in output (cleaner parsing)
+            "-duc",          # Disable update check (Crucial for offline/air-gapped)
         ])
         
         # 1. Performance Tuning

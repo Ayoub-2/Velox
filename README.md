@@ -46,6 +46,11 @@ docker compose up --build
 
 ### Enterprise / RHEL 9
 For strict environments with SElinux and Proxies, please refer to the [RHEL 9 Installation Guide](docs/INSTALL_RHEL9.md).
+Before starting the stack, map your host internal DNS to Docker by running the pre-flight script:
+```bash
+./scripts/setup_rh_dns.sh
+docker compose up --build
+```
 
 ## 🚀 Getting Started
 
