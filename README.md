@@ -52,6 +52,21 @@ Before starting the stack, map your host internal DNS to Docker by running the p
 docker compose up --build
 ```
 
+### 🔒 Enabling HTTPS (SSL)
+The Velox web portal supports dual-port access (HTTP on 3000, HTTPS on 443) within the exact same container.
+To enable HTTPS, you must generate or provide SSL certificates before starting the stack.
+
+You can use the built-in helper script to generate self-signed certificates with SAN support:
+```bash
+# Usage: ./scripts/generate_ssl_certs.sh <SERVER_IP> [DOMAIN_NAME]
+./scripts/generate_ssl_certs.sh 10.2.4.5 velox.internal
+```
+Once generated (they will be saved in `./certs`), simply restart the web container:
+```bash
+docker compose restart web
+```
+The portal will instantly become available securely at `https://[IP_OR_DOMAIN]`.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -64,7 +79,7 @@ docker compose up --build
     ```bash
     docker-compose up --build
     ```
-    *This starts the Web Portal (3000), Orchestrator (8000), Worker, Redis, ZAP, and Postgres.*
+    *This starts the Web Portal (3000), Orchestrator, Worker, Redis, ZAP, and Postgres.*
 3.  **Access the Dashboard**: `http://localhost:3000`
 
 ### Database Migrations
@@ -73,8 +88,8 @@ The app auto-initializes the DB on startup for dev. For production:
 docker-compose exec api alembic upgrade head
 ```
 - **DAST Dashboard**: http://localhost:3000/dast
-- **Orchestrator API**: http://localhost:8000/docs
-- **ZAP Proxy**: http://localhost:8090
+- **Orchestrator API Docs**: http://localhost:3000/api/v1/docs
+- **ZAP Proxy**: (Internal to Docker Network)
 
 ### Manual Development
 1.  **Frontend**:

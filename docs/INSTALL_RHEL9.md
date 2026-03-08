@@ -45,9 +45,6 @@ Open the necessary ports for the application.
 # Frontend
 firewall-cmd --permanent --add-port=3000/tcp
 
-# Backend API
-firewall-cmd --permanent --add-port=8000/tcp
-
 # Apply changes
 firewall-cmd --reload
 ```

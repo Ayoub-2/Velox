@@ -21,9 +21,8 @@ echo "------------------------------------"
 echo "[*] Configuring Firewall..."
 if command -v firewall-cmd &> /dev/null; then
     firewall-cmd --permanent --add-port=3000/tcp
-    firewall-cmd --permanent --add-port=8000/tcp
     firewall-cmd --reload
-    echo "    ✅ Ports 3000 (Web) and 8000 (API) opened."
+    echo "    ✅ Port 3000 (Web) opened."
 else
     echo "    ⚠️ 'firewall-cmd' not found. Skipping firewall config."
 fi

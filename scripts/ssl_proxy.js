@@ -5,8 +5,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 // Configuration
-const HTTPS_PORT = 3000;
-const APP_PORT = 3001;
+const HTTPS_PORT = 3443;
+const APP_PORT = 3000;
 const SSL_KEY = '/app/certs/server.key';
 const SSL_CRT = '/app/certs/server.crt';
 
@@ -30,7 +30,7 @@ if (!fs.existsSync(SSL_KEY) || !fs.existsSync(SSL_CRT)) {
     // 2. Start Application (Child Process)
     const app = spawn('node', ['server.js'], {
         stdio: 'inherit',
-        env: { ...process.env, PORT: APP_PORT.toString() }
+        env: { ...process.env, PORT: APP_PORT.toString(), HOSTNAME: '0.0.0.0' }
     });
 
     app.on('exit', (code) => {
@@ -50,7 +50,7 @@ if (!fs.existsSync(SSL_KEY) || !fs.existsSync(SSL_CRT)) {
 
     const server = https.createServer(options, (req, res) => {
         const proxyReq = http.request({
-            hostname: 'localhost',
+            hostname: '127.0.0.1',
             port: APP_PORT,
             path: req.url,
             method: req.method,
@@ -72,7 +72,7 @@ if (!fs.existsSync(SSL_KEY) || !fs.existsSync(SSL_CRT)) {
     // WebSocket Support (Upgrade)
     server.on('upgrade', (req, socket, head) => {
         const proxyReq = http.request({
-            hostname: 'localhost',
+            hostname: '127.0.0.1',
             port: APP_PORT,
             path: req.url,
             method: req.method,

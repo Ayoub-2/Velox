@@ -13,6 +13,7 @@ services:
     command: node /app/ssl_proxy.js
     ports:
       - "3000:3000"
+      - "443:3443"
     dns:
       - ${VELOX_INTERNAL_DNS:-8.8.8.8}
       - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
@@ -43,8 +44,6 @@ services:
       exec uvicorn main:app --host 0.0.0.0 --port 8000
       "
 
-    ports:
-      - "8000:8000"
     dns:
       - ${VELOX_INTERNAL_DNS:-8.8.8.8}
       - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
@@ -144,8 +143,6 @@ services:
   # Job Queue Broker
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -160,8 +157,6 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-    ports:
-      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -175,8 +170,6 @@ services:
     image: zaproxy/zap-stable
     shm_size: 2g
     command: zap.sh -daemon -host 0.0.0.0 -port 8090 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true
-    ports:
-      - "8090:8090"
     dns:
       - ${VELOX_INTERNAL_DNS:-8.8.8.8}
       - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
