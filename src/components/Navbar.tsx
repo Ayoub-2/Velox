@@ -55,6 +55,13 @@ export default function Navbar() {
                             >
                                 {t('navbar.scans')}
                             </Link>
+                            
+                            <Link
+                                href="/chat"
+                                className={`text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 rounded px-2 py-1 ${pathname?.startsWith('/chat') ? 'text-teal-400' : 'text-slate-300 hover:text-teal-400'}`}
+                            >
+                                AI Assistant
+                            </Link>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">

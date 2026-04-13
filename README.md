@@ -26,6 +26,9 @@ Welcome to the **Velox** project.
 *   **Executive Reporting**: One-click PDF export for stakeholders.
 *   **Scheduling**: Infrastructure ready for periodic assurance scans.
 
+### Phase 2.3: Intelligent Assistance
+*   **Contextual AI Assistant**: Built-in AI Chat interface with Security Personas (GRC, Pentest, Dev) providing context-aware security intelligence securely.
+
 ## Knowledge Base Content
 
 The actual security articles (the content of the app) are located in the [knowledge-base/](knowledge-base/) directory.

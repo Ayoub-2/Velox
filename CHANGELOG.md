@@ -2,9 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.0] - 2026-03-06 (Red Hat DNS & Export Styling)
+## [1.2.0] - 2026-04-13 (AI Chat Assistant)
 
 ### Added
+- **AI Contextual Assistant**: Added an intelligent chat interface (`/chat`) tailored with GRC, Pentest, and Dev personas. Connects seamlessly via OpenRouter.
+- **Security Check**: Enforced prompt boundary protections to avoid injection, and performed validation of inputs.
+- **Documentation**: Added `project-docs/security/CHAT_THREAT_MODEL.md` and `project-docs/qa/QA_REPORT_CHAT.md`.
+
+## [1.1.0] - 2026-03-06 (Red Hat DNS & Export Styling)
 - **Red Hat/Enterprise DNS Support**: Added `scripts/setup_rh_dns.sh` to dynamically extract internal host DNS servers (`nmcli` / `systemd-resolved`) and inject them into Docker Compose via `.env`.
 - **Security Documentation**: Added `project-docs/analysis/redhat_dns_proposal.md`, `project-docs/security/redhat_dns_threat_model.md`, and `project-docs/qa/qa_report_redhat_dns.md` for the DNS integration.
 - **Excel Report Formatting**: Enhanced the Excel export with `openpyxl` styles, adding bold colored headers, cell borders, and dynamic row highlighting based on vulnerability severity (e.g., Red for Critical, Yellow for High).
