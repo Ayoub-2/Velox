@@ -90,11 +90,10 @@ export default function ChatInterface() {
             <button
               key={p}
               onClick={() => setPersona(p)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-out ${
-                persona === p
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ease-out ${persona === p
                   ? "bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-sm"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-              }`}
+                }`}
             >
               {getPersonaIcon(p)}
               {p}
@@ -121,33 +120,42 @@ export default function ChatInterface() {
           messages.map((m, idx) => (
             <div
               key={idx}
-              className={`flex gap-4 ${
-                m.role === "user" ? "flex-row-reverse" : "flex-row"
-              }`}
+              className={`flex gap-4 ${m.role === "user" ? "flex-row-reverse" : "flex-row"
+                }`}
             >
               <div
-                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 ${
-                  m.role === "user"
+                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 ${m.role === "user"
                     ? "bg-teal-600 text-white"
                     : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-teal-400"
-                }`}
+                  }`}
               >
                 {m.role === "user" ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
               </div>
               <div
-                className={`px-4 py-3 rounded-2xl max-w-[80%] ${
-                  m.role === "user"
+                className={`px-4 py-3 rounded-2xl max-w-[80%] ${m.role === "user"
                     ? "bg-teal-600 text-white rounded-tr-sm"
                     : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-sm shadow-sm"
-                }`}
+                  }`}
               >
-                {/* Extremely basic line-break rendering, can be upgraded to react-markdown later */}
-                {m.content.split('\n').map((line, i) => (
-                  <React.Fragment key={i}>
-                    {line}
-                    <br />
-                  </React.Fragment>
-                ))}
+                {/* Lightweight Markdown rendering for Bold, Italic, and Inline Code */}
+                {m.content.split('\n').map((line, i) => {
+                  const parts = line.split(/(\*\*.*?\*\*|`.*?`|\*.*?\*)/g);
+                  return (
+                    <React.Fragment key={i}>
+                      {parts.map((part, idx) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                          return <strong key={idx} className="font-bold">{part.slice(2, -2)}</strong>;
+                        } else if (part.startsWith('`') && part.endsWith('`')) {
+                          return <code key={idx} className="bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded text-sm font-mono">{part.slice(1, -1)}</code>;
+                        } else if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+                          return <em key={idx} className="italic">{part.slice(1, -1)}</em>;
+                        }
+                        return <span key={idx}>{part}</span>;
+                      })}
+                      <br />
+                    </React.Fragment>
+                  );
+                })}
               </div>
             </div>
           ))
