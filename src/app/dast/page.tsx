@@ -218,7 +218,7 @@ export default function DastPage() {
                                 <input
                                     type="url"
                                     required
-                                    placeholder="http://web:3000"
+                                    placeholder="http://web:8080"
                                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                     value={target}
                                     onChange={e => setTarget(e.target.value)}

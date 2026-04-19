@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ChatWidget from "@/components/ChatWidget";
 import { StackProvider } from "@/lib/stack-context";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -43,6 +44,7 @@ export default function RootLayout({
               <div className="flex-grow pt-16">
                 {children}
               </div>
+              <ChatWidget />
               <Footer />
             </StackProvider>
           </ThemeProvider>

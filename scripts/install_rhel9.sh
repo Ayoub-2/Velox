@@ -51,7 +51,7 @@ WorkingDirectory=/opt/sbd
 ExecStart=/usr/bin/npm start
 Restart=always
 Environment=NODE_ENV=production
-Environment=PORT=3000
+Environment=PORT=8080
 
 [Install]
 WantedBy=multi-user.target
@@ -59,7 +59,7 @@ EOF
 
 # 6. Enable Firewall
 echo "[*] Configuring Firewall..."
-sudo firewall-cmd --permanent --add-port=3000/tcp
+sudo firewall-cmd --permanent --add-port=8080/tcp
 sudo firewall-cmd --reload
 
 # 7. Start Service
@@ -67,4 +67,4 @@ echo "[*] Starting Service..."
 sudo systemctl daemon-reload
 sudo systemctl enable --now security-kb
 
-echo "[+] Installation Complete! App running on port 3000."
+echo "[+] Installation Complete! App running on port 8080."

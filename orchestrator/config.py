@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     
     # Security
     API_KEY: str = "change_me_in_prod"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    CORS_ORIGINS: list[str] = ["http://localhost:8080", "http://127.0.0.1:8080"]
     
     # Infrastructure
     REDIS_URL: str = "redis://redis:6379/0"

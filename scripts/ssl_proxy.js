@@ -6,18 +6,18 @@ const path = require('path');
 
 // Configuration
 const HTTPS_PORT = 3443;
-const APP_PORT = 3000;
+const APP_PORT = 8080;
 const SSL_KEY = '/app/certs/server.key';
 const SSL_CRT = '/app/certs/server.crt';
 
 // 1. Check for Certificates
 if (!fs.existsSync(SSL_KEY) || !fs.existsSync(SSL_CRT)) {
-    console.log('⚠️  SSL Certificates not found. Starting app directly on port 3000...');
+    console.log('⚠️  SSL Certificates not found. Starting app directly on port 8080...');
 
-    // Pass-through: Just run the server script on port 3000
+    // Pass-through: Just run the server script on port 8080
     const app = spawn('node', ['server.js'], {
         stdio: 'inherit',
-        env: { ...process.env, PORT: '3000' }
+        env: { ...process.env, PORT: '8080' }
     });
 
     app.on('exit', (code) => process.exit(code));

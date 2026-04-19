@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-04-19 (AI Chat Widget & Streaming)
+
+### Added
+- **Global Floating Chat Widget**: Implemented a universally accessible `<ChatWidget />` anchored to the `layout.tsx`, persisting across all routes, locked to the `Dev` persona.
+- **Native SSE Streaming**: Refactored the `route.ts` API proxy and both frontend chat components to consume Server-Sent Events incrementally, creating real-time typewriter UI feedback.
+
+### Changed
+- **Web Port Migration**: Globally migrated the Next.js `web` container, proxies, and firewall configurations from the default `3000` to the enterprise standard `8080` (HTTP-Alternate) to prevent local dev conflicts.
+- **Memory Context Expansion**: Increased context memory retention from 5 turns to 15 turns (`slice(-30)`) within the OpenRouter API payload.
+- **Visual Separation**: Upgraded UI CSS across the `/chat` page to feature distinct Indigo Gradients for the AI Assistant against Slate backgrounds for User inputs.
+
 ## [1.2.0] - 2026-04-13 (AI Chat Assistant)
 
 ### Added

@@ -12,7 +12,7 @@ services:
     # Wrapper script handles SSL if certs exist
     command: node /app/ssl_proxy.js
     ports:
-      - "3000:3000"
+      - "8080:8080"
       - "443:3443"
     dns:
       - ${VELOX_INTERNAL_DNS:-8.8.8.8}

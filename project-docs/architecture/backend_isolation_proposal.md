@@ -1,14 +1,14 @@
 # Technical Design: Backend Isolation & Port Minimization
 
 ## 1. Feature Overview
-The goal of this architectural change is to enforce strict network isolation for all internal backend services. Currently, Velox exposes multiple container ports to the host interface (`8000` for API, `5433` for DB, `6379` for Redis, `8090` for ZAP). To minimize the attack surface, we will isolate these services so that communication happens **strictly within the Docker bridge network**. Only the `web` service (Frontend UI) will remain accessible from outside the container environment on Port `3000`.
+The goal of this architectural change is to enforce strict network isolation for all internal backend services. Currently, Velox exposes multiple container ports to the host interface (`8000` for API, `5433` for DB, `6379` for Redis, `8090` for ZAP). To minimize the attack surface, we will isolate these services so that communication happens **strictly within the Docker bridge network**. Only the `web` service (Frontend UI) will remain accessible from outside the container environment on Port `8080`.
 
 ## 2. Technical Architecture
 
 ### 2.1 Current State (Over-exposed)
 ```mermaid
 graph TD;
-    User((User)) -->|Port 3000| Web[Next.js Web];
+    User((User)) -->|Port 8080| Web[Next.js Web];
     User -->|Port 8000| API[FastAPI];
     User -->|Port 5433| DB[(PostgreSQL)];
     User -->|Port 8090| ZAP[OWASP ZAP];
@@ -18,7 +18,7 @@ graph TD;
 ### 2.2 Target State (Isolated Backend)
 ```mermaid
 graph TD;
-    User((User)) -->|Port 3000| Web[Next.js Web];
+    User((User)) -->|Port 8080| Web[Next.js Web];
     
     subgraph Internal Docker Network (Restricted to Container Env)
         Web -->|Internal DNS mapping| API[FastAPI:8000];
@@ -61,12 +61,12 @@ We must surgically delete the `ports:` array from the following services:
 - **`db`**: Remove `ports: - "5433:5432"`
 - **`zap`**: Remove `ports: - "8090:8090"`
 
-*Note: The `web` service will retain `ports: - "3000:3000"` to remain highly accessible.*
+*Note: The `web` service will retain `ports: - "8080:8080"` to remain highly accessible.*
 
 ### `next.config.ts`
 We will clean up the Content Security Policy (CSP). Currently, it explicitly allows `http://localhost:8090` (ZAP port):
 ```javascript
-value: "default-src 'self'; connect-src 'self' http://localhost:8090 ws://localhost:3000; ..."
+value: "default-src 'self'; connect-src 'self' http://localhost:8090 ws://localhost:8080; ..."
 ```
 We will remove `http://localhost:8090` since the browser will no longer interact with it.
 
@@ -76,7 +76,7 @@ To ensure the backend API documentation (Swagger UI/Redoc) remains accessible to
     docs_url=f"{settings.API_V1_STR}/docs",
     redoc_url=f"{settings.API_V1_STR}/redoc"
 ```
-This enables zero-config developer access via `http://localhost:3000/api/v1/docs`.
+This enables zero-config developer access via `http://localhost:8080/api/v1/docs`.
 
 ### Operational Scripts & Documentation
 Through further analysis of the codebase, several external references to Port 8000 were identified and must be pruned to avoid broken configurations or misleading documentation:
@@ -85,5 +85,5 @@ Through further analysis of the codebase, several external references to Port 80
 - **`README.md`**: May contain references to accessing the API at `localhost:8000`.
 
 ## 5. Security & QA Verification
--   **Security**: Verify via `docker ps` that only `0.0.0.0:3000->3000/tcp` exists under the "PORTS" column, confirming that the other applications only show their exposed application ports un-bound to host IPs.
+-   **Security**: Verify via `docker ps` that only `0.0.0.0:8080->8080/tcp` exists under the "PORTS" column, confirming that the other applications only show their exposed application ports un-bound to host IPs.
 -   **QA Status Checks**: Ensure that navigating to the `/dast` UI still loads scan statistics, confirming that the Web container successfully proxies API queries locally.

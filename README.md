@@ -28,6 +28,8 @@ Welcome to the **Velox** project.
 
 ### Phase 2.3: Intelligent Assistance
 *   **Contextual AI Assistant**: Built-in AI Chat interface with Security Personas (GRC, Pentest, Dev) providing context-aware security intelligence securely.
+*   **Global Dev Widget**: A persistent, floating widget available on all views delivering real-time DevSecOps guidance.
+*   **Real-time Streaming**: Native Server-Sent Events (SSE) support for near-instant generative text streaming.
 
 ## Knowledge Base Content
 
@@ -56,7 +58,7 @@ docker compose up --build
 ```
 
 ### 🔒 Enabling HTTPS (SSL)
-The Velox web portal supports dual-port access (HTTP on 3000, HTTPS on 443) within the exact same container.
+The Velox web portal supports dual-port access (HTTP on 8080, HTTPS on 443) within the exact same container.
 To enable HTTPS, you must generate or provide SSL certificates before starting the stack.
 
 You can use the built-in helper script to generate self-signed certificates with SAN support:
@@ -82,16 +84,16 @@ The portal will instantly become available securely at `https://[IP_OR_DOMAIN]`.
     ```bash
     docker-compose up --build
     ```
-    *This starts the Web Portal (3000), Orchestrator, Worker, Redis, ZAP, and Postgres.*
-3.  **Access the Dashboard**: `http://localhost:3000`
+    *This starts the Web Portal (8080), Orchestrator, Worker, Redis, ZAP, and Postgres.*
+3.  **Access the Dashboard**: `http://localhost:8080`
 
 ### Database Migrations
 The app auto-initializes the DB on startup for dev. For production:
 ```bash
 docker-compose exec api alembic upgrade head
 ```
-- **DAST Dashboard**: http://localhost:3000/dast
-- **Orchestrator API Docs**: http://localhost:3000/api/v1/docs
+- **DAST Dashboard**: http://localhost:8080/dast
+- **Orchestrator API Docs**: http://localhost:8080/api/v1/docs
 - **ZAP Proxy**: (Internal to Docker Network)
 
 ### Manual Development

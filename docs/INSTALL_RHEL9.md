@@ -43,7 +43,7 @@ Open the necessary ports for the application.
 
 ```bash
 # Frontend
-firewall-cmd --permanent --add-port=3000/tcp
+firewall-cmd --permanent --add-port=8080/tcp
 
 # Apply changes
 firewall-cmd --reload

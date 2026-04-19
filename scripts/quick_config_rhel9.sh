@@ -1,7 +1,7 @@
 #!/bin/bash
 # Velox - RHEL 9 Quick Configuration Script
 # Prepares the environment for Docker Deployment:
-# 1. Configures Firewall (Ports 3000, 8000)
+# 1. Configures Firewall (Ports 8080, 8000)
 # 2. Sets SELinux Contexts for Volumes
 #
 # Usage: sudo ./quick_config_rhel9.sh
@@ -20,9 +20,9 @@ echo "------------------------------------"
 # 1. Firewall Configuration
 echo "[*] Configuring Firewall..."
 if command -v firewall-cmd &> /dev/null; then
-    firewall-cmd --permanent --add-port=3000/tcp
+    firewall-cmd --permanent --add-port=8080/tcp
     firewall-cmd --reload
-    echo "    ✅ Port 3000 (Web) opened."
+    echo "    ✅ Port 8080 (Web) opened."
 else
     echo "    ⚠️ 'firewall-cmd' not found. Skipping firewall config."
 fi

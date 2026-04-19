@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Send, User, Bot, Shield, Code, Briefcase } from "lucide-react";
+import { Send, User, Bot, Shield, Code, Briefcase, Trash2 } from "lucide-react";
 
 type Message = {
   role: "user" | "assistant" | "system";
@@ -15,7 +15,35 @@ export default function ChatInterface() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [persona, setPersona] = useState<Persona>("Pentest");
+  const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load history from LocalStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("velox_main_chat_history");
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse chat history");
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Sync history to LocalStorage
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem("velox_main_chat_history", JSON.stringify(messages));
+    }
+  }, [messages, isInitialized]);
+
+  const clearHistory = () => {
+    if (window.confirm("Are you sure you want to clear your chat history?")) {
+      setMessages([]);
+      localStorage.removeItem("velox_main_chat_history");
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,6 +127,13 @@ export default function ChatInterface() {
               {p}
             </button>
           ))}
+          <button
+            onClick={clearHistory}
+            className="flex items-center justify-center p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-700 transition-colors ml-2"
+            title="Clear History"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -124,17 +159,19 @@ export default function ChatInterface() {
                 }`}
             >
               <div
-                className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 ${m.role === "user"
-                    ? "bg-teal-600 text-white"
-                    : "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-teal-400"
+                className={`flex-shrink-0 w-8 h-8 flex items-center justify-center mt-1 outline-none ${
+                    m.role === "user"
+                    ? "bg-slate-700 dark:bg-slate-600 text-white rounded-full shadow" 
+                    : "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-lg ring-2 ring-purple-500/20"
                   }`}
               >
                 {m.role === "user" ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
               </div>
               <div
-                className={`px-4 py-3 rounded-2xl max-w-[80%] ${m.role === "user"
-                    ? "bg-teal-600 text-white rounded-tr-sm"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-sm shadow-sm"
+                className={`px-5 py-4 max-w-[85%] ${
+                    m.role === "user"
+                    ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-2xl rounded-tr-sm shadow-sm"
+                    : "bg-indigo-50/50 dark:bg-indigo-900/20 text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-sm shadow-sm border border-indigo-100 dark:border-indigo-800/50"
                   }`}
               >
                 {/* Lightweight Markdown rendering for Bold, Italic, and Inline Code */}
