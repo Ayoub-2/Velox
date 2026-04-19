@@ -78,9 +78,39 @@ export default function ChatInterface() {
         throw new Error("Failed to send message");
       }
 
-      const data = await response.json();
-      if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        if (data.message) {
+          setMessages((prev) => [...prev, data.message]);
+        }
+        return;
+      }
+
+      // Stream handling parsing logic
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = "";
+      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim() !== '' && line.trim().startsWith('data: '));
+        for (const line of lines) {
+          const dataStr = line.replace(/^data: /, '').trim();
+          if (dataStr === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(dataStr);
+            assistantMessage += parsed.choices[0]?.delta?.content || "";
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              newMessages[newMessages.length - 1] = { role: "assistant", content: assistantMessage };
+              return newMessages;
+            });
+          } catch(e) {}
+        }
       }
     } catch (error) {
       console.error("Chat error:", error);

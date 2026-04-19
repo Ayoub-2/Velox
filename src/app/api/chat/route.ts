@@ -41,6 +41,7 @@ export async function POST(req: Request) {
                 prompt: content
             }) + '\n';
             const logPath = path.join(process.cwd(), 'project-docs', 'security', 'ai_audit.jsonl');
+            await fs.mkdir(path.dirname(logPath), { recursive: true });
             await fs.appendFile(logPath, logEntry);
         } catch (e) {
             console.error('[AI-DEBUG] Failed to write audit log', e);
