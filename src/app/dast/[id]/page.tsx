@@ -5,8 +5,15 @@ import { useParams, Link } from 'react-router-dom';
 import { apiClient, ScanResponse } from '@/lib/api';
 import { Scorecard } from '@/components/dast/Scorecard';
 import { KBLink } from '@/components/dast/KBLink';
+import LoginRequired from '@/components/LoginRequired';
 
 export default function ScanDetailsPage() {
+    const isAuthenticated = localStorage.getItem('velox_authenticated') === 'true';
+
+    if (!isAuthenticated) {
+        return <LoginRequired title="Scan Detail Report" />;
+    }
+
     const params = useParams();
     const id = params?.id as string;
 

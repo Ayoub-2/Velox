@@ -1,10 +1,4 @@
-import { Metadata } from 'next';
 import ChatInterface from '@/components/ChatInterface';
-
-export const metadata: Metadata = {
-  title: 'AI Assistant | Velox',
-  description: 'Context-aware AI Assistant tuned for GRC, Pentest, and DevSecOps professionals.',
-};
 
 export default function ChatPage() {
   return (

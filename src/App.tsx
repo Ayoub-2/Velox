@@ -18,6 +18,7 @@ import ComparisonsPage from './app/comparisons/page';
 import GlossaryPage from './app/glossary/page';
 import KbPage from './app/knowledge-base/page';
 import KbDetailPage from './app/knowledge-base/[slug]/page';
+import AdminPage from './app/admin/page';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
                 <Route path="/glossary" element={<GlossaryPage />} />
                 <Route path="/knowledge-base" element={<KbPage />} />
                 <Route path="/knowledge-base/:slug" element={<KbDetailPage />} />
+                <Route path="/admin" element={<AdminPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>

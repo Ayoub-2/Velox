@@ -89,3 +89,43 @@ All integration tests pass. The native Node.js production proxy correctly resolv
 | **No API Key Configured** | Unset `OPENROUTER_API_KEY` env | 500 Internal Server Error: `{"error":"AI capabilities are not configured correctly"}` | **Passed** |
 | **Email Leak in Prompt** | Prompt contains `test@velox.com` | DLP triggers, logs `DLP_BLOCKED`, returns DLP warning response. | **Passed** |
 
+---
+
+## 6. Update: 2026-05-23 Hybrid Authentication, Scan Isolation, and Audit Trails
+
+**Date**: 2026-05-23 (Post-Compaction Phase)  
+**Feature/Fix**: Hybrid Authentication Model, Scan Isolation/Ownership, and Database-Backed Audit Logging  
+**Scope**: `SecurityConfig.java`, `ScanController.java`, `ChatController.java`, `KbController.java`, `AuditService.java`, `AdminController.java`, `api.ts`, `main.tsx`, `App.tsx`, `Navbar.tsx`, `AdminPage.tsx`, `LoginRequired.tsx`.
+
+### Tested Functionality
+1. **Public vs. Private Route Separation**: Verified that `/knowledge-base` and `/chat` are publicly accessible (unauthenticated). Verified that `/dast`, `/dast/:id`, and `/admin` show a lock screen or block rendering if the user is unauthenticated.
+2. **Scan Ownership & Isolation**: Confirmed that normal users can only access (retrieve, list, or export) scans they triggered themselves. Confirmed that any attempt by a non-owner (or unauthenticated request) to access `/api/v1/scans/{id}` or `/api/v1/scans/{id}/export` yields a `403 Forbidden` or `401 Unauthorized`.
+3. **Database-Backed Audit Logging**: Verified all core user operations (`TRIGGER_SCAN`, `EXPORT_REPORT`, `GET_SCAN`, `AI_CHAT_PROCESSED`, `AI_CHAT_DLP_BLOCKED`, `VIEW_KB`) insert records into the `audit_logs` database table.
+4. **Admin Portal & API Security**: Verified `/api/v1/admin/audit` is strictly restricted to Keycloak users carrying the realm role `admin` or preferred username `admin`. Non-admin attempts to query `/api/v1/admin/audit` yield `403 Forbidden`. Admins can successfully view the Audit Trail page `/admin` populated with search, action, and user filters.
+
+### Test Scenarios and Results
+
+#### Public & Private Endpoint Behavior
+*   [x] **Anonymous KB Fetch**: Hitting `GET /api/v1/kb` without an Authorization header returns `200 OK` and lists articles.
+*   [x] **Anonymous AI Chat**: Posting to `/api/v1/chat` without a token streams response correctly and creates audit log under `"anonymous"`.
+*   [x] **Secured Scans Lockout**: Hitting `GET /api/v1/scans` without a token returns `401 Unauthorized`. Frontend displays custom `LoginRequired` component.
+
+#### Scan Ownership Enforcement
+*   [x] **Self-Scan List/Retrieve**: User `emp12345` triggers a scan. Hitting `GET /api/v1/scans` returns only their scans. Hitting `GET /api/v1/scans/{id}` returns the scan.
+*   [x] **Scan Detail Ownership Leak Prevention**: Attempting to retrieve `emp12345`'s scan using another non-admin token (or direct API call) returns `403 Forbidden` and logs an `UNAUTHORIZED_SCAN_ACCESS` audit event.
+*   [x] **Scan Export Ownership Leak Prevention**: Attempting to export `emp12345`'s scan report without owning it returns `403 Forbidden` and logs an `UNAUTHORIZED_REPORT_EXPORT` audit event.
+
+#### Admin Portal & Audit Logs
+*   [x] **Admin Global Scan Visibility**: Logged in as `admin` (carrying `admin` realm role), list scans returns all scans in the system.
+*   [x] **Audit Log Retrieval**: Hitting `/api/v1/admin/audit` as `admin` returns the database-backed audit log list.
+*   [x] **Audit Log Restriction**: Hitting `/api/v1/admin/audit` as `emp12345` yields `403 Forbidden`.
+*   [x] **Action Audit Logging**: Confirmed that `TRIGGER_SCAN`, `EXPORT_REPORT`, `GET_SCAN`, `AI_CHAT_PROCESSED` log correctly with accurate timestamps and details in the DB.
+
+### Failure Mode and Boundary Testing (Security Regression)
+
+| Scenario | Input/Action | Expected Behavior | Result |
+|---|---|---|---|
+| **Cross-User Scan Request** | Query details or export report of another user's scan. | `403 Forbidden` early block. | **Passed** |
+| **Normal User Admin API Abuse** | Access `/api/v1/admin/audit` with normal user JWT. | `403 Forbidden` (rejected programmatically). | **Passed** |
+| **Audit Logs Search injection** | Send malformed search queries to audit filters. | Query executes safely without SQL injection (JPA parameterized query/Spring Data repository method). | **Passed** |
+

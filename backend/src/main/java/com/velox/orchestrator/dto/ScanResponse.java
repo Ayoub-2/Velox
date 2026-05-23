@@ -17,4 +17,5 @@ public class ScanResponse {
     private LocalDateTime created_at;
     private ScanOptions options;
     private List<Map<String, Object>> result;
+    private String sessionId;
 }

@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.3] - 2026-05-23 (Hybrid Auth, Scan Isolation & Admin Audit Trail)
+
+### Added
+- **JPA AuditLog Entity & Repository**: Integrated the new database-backed audit logging tracking actions (`TRIGGER_SCAN`, `EXPORT_REPORT`, `GET_SCAN`, `AI_CHAT_PROCESSED`, `AI_CHAT_DLP_BLOCKED`, `VIEW_KB`) mapped to JPA entities.
+- **Admin Controller (`AdminController.java`)**: Added `/api/v1/admin/audit` REST endpoint secured with programmatic Keycloak admin username/realm-role checks.
+- **Admin Portal Frontend (`AdminPage.tsx`)**: Created a premium admin view displaying audit trail listings with search and filter dropdowns (Action, User).
+- **Vite .dockerignore Optimization**: Added a `.dockerignore` file to avoid copying host `node_modules` and backend directories, speeding up docker builds and protecting runtime integrity.
+
+### Changed
+- **Hybrid Authentication Model**: Opened `/knowledge-base` and `/chat` routes to unauthenticated public access. Enforced strict Keycloak-based authentication on `/dast`, `/dast/:id`, and `/admin` routes.
+- **Scan Ownership Isolation**: Updated `ScanController.java` to associate scan records with the owner's Keycloak username. Non-owners and unauthenticated requests to view or export reports are early-blocked with `403 Forbidden`.
+- **Keycloak Frontend Authentication Flow**: Reconfigured Keycloak initialization to use `onLoad: 'check-sso'` instead of forcing redirect, ensuring unauthenticated sessions render cleanly.
+- **Vite TS Exclusions**: Excluded dead Next.js files (`src/app/api`, `src/app/layout.tsx`, `src/lib/docs.ts`) from the TypeScript configuration to allow clean SPA builds.
+
+### Security Impact
+- **Enforced Access Boundaries**: Users can no longer list, view, or export scan data that they do not own. Access attempt by unauthorized users generates warning audit records and returns `403 Forbidden`.
+- **Programmatic Admin Privilege Verification**: Protected the admin endpoints programmatically against role mapping mismatches in Spring Security by verifying both preferred username `"admin"` and realm role token claims.
+- **Centralized Audit Trails**: Every security-sensitive transaction (scanning, data exfiltration via Excel exports, LLM processing, DLP violations, KB lookups) is permanently recorded in the Postgres database.
+
 ## [1.4.2] - 2026-05-23 (Target Duplication & Chat Return 500 Fixes)
 
 ### Added

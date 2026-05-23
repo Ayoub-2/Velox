@@ -52,3 +52,31 @@ This document outlines the security posture, threat model, and mitigations for t
 3. **Information Disclosure via 500 Responses**: When Spring MVC is unable to write responses, it might throw a generic `HttpMessageNotWritableException` which Tomcat formats as a HTML/JSON error containing internal lambda information or server state.
    - *Mitigation*: We changed the controller method return type to `ResponseEntity<StreamingResponseBody>` and introduced specific local exception classes (`ChatValidationException`, `ChatConfigurationException`, `DlpBlockedException`) and `@ExceptionHandler` methods to format errors cleanly. No internal stack traces are returned to clients.
 
+---
+
+## 7. Update: 2026-05-23 Hybrid Authentication, Scan Isolation, and Audit Trails Threat Modeling
+
+### Scope
+- Hybrid Authentication Model (public KB and Chat)
+- Scan Isolation & Ownership Enforcement (`ScanController.java`)
+- DB-Backed Audit Trail & Admin Endpoint (`AdminController.java`)
+- Client logout cleanup (`main.tsx`)
+
+### High-Risk Change Self-Review & Threat Analysis
+
+1. **Cross-User Scan Information Disclosure & Report Exfiltration (Threat ID: T-005)**
+   - *Threat*: Attackers or normal authenticated users brute force scan IDs (UUIDs) on `/api/v1/scans/{id}` or `/api/v1/scans/{id}/export` to read other users' DAST scan results or download raw Excel reports.
+   - *Mitigation*: Scan ownership checks are enforced in the REST layer. `ScanController` retrieves the scan and verifies: `!isAdmin && !username.equals(scan.getSessionId())`. If false, access is denied early with `403 Forbidden`, and an unauthorized access action is audited.
+2. **Audit Log Access Abuse & Privilege Escalation (Threat ID: T-006)**
+   - *Threat*: Non-admin users query `/api/v1/admin/audit` directly using browser developer tools or raw API requests to read user actions, DLP triggers, and search history.
+   - *Mitigation*: Double-layered programmatic role-checking in `AdminController.java`. It validates both preferred username `admin` and Keycloak parsed token realm roles (`realm_access.roles` contains `admin`). Unauthorized attempts return `403 Forbidden`.
+3. **SQL Injection in Audit Trail Queries (Threat ID: T-007)**
+   - *Threat*: Malicious admins or compromised accounts input injection payloads (e.g. `' OR '1'='1`) into the search, user, or action dropdowns of the Admin Portal.
+   - *Mitigation*: Database interactions are backed by Hibernate JPA. No raw SQL or string concatenation is used. JPA generates parameterized queries, shielding the database from injection attempts.
+4. **Denial of Service (DoS) / LLM Financial Exhaustion on Public Chat (Threat ID: T-008)**
+   - *Threat*: Attackers write simple scripts to spam POST `/api/v1/chat` without obtaining Keycloak tokens, exhausting API limits/billing quotas on OpenRouter.
+   - *Mitigation*: Pre-flight checks are run prior to forwarding requests to OpenRouter. If the request fails local schema validation, it is rejected before initiating downstream calls.
+5. **Stale Session Storage & Local Account Hijacking (Threat ID: T-009)**
+   - *Threat*: When a user logs out, stale localStorage credentials (e.g. `isAdmin = true` or access tokens) remain in the browser, allowing the next user of the device to see admin controls.
+   - *Mitigation*: On logout, `main.tsx` explicitly purges all `velox_*` storage keys and resets `isAdmin` to `'false'`.
+

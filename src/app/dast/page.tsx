@@ -8,9 +8,16 @@ import {
     PieChart, Pie, Cell
 } from 'recharts';
 import { Shield, AlertCircle, Activity, Zap } from 'lucide-react';
+import LoginRequired from '@/components/LoginRequired';
 
 // Force rebuild: Icon fix
 export default function DastPage() {
+    const isAuthenticated = localStorage.getItem('velox_authenticated') === 'true';
+
+    if (!isAuthenticated) {
+        return <LoginRequired title="DAST Scan Dashboard" />;
+    }
+
     const [target, setTarget] = useState('');
     const [scanType, setScanType] = useState('nuclei');
     const [showAdvanced, setShowAdvanced] = useState(false);

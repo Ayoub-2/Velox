@@ -3,6 +3,7 @@ package com.velox.orchestrator.controller;
 import com.velox.orchestrator.dto.ChatMessage;
 import com.velox.orchestrator.dto.ChatRequest;
 import com.velox.orchestrator.service.ChatService;
+import com.velox.orchestrator.service.AuditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -26,6 +29,9 @@ public class ChatController {
 
     @Autowired
     private ChatService chatService;
+
+    @Autowired
+    private AuditService auditService;
 
     // Custom Exceptions for exception handlers to resolve return-type serialization issues
     public static class ChatValidationException extends RuntimeException {
@@ -65,7 +71,15 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<StreamingResponseBody> chat(@RequestBody ChatRequest request) {
+    public ResponseEntity<StreamingResponseBody> chat(
+            @RequestBody ChatRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String username = "anonymous";
+        if (jwt != null) {
+            String claimUser = jwt.getClaimAsString("preferred_username");
+            username = (claimUser != null && !claimUser.isBlank()) ? claimUser : jwt.getSubject();
+        }
+
         if (request.getMessages() == null || request.getMessages().isEmpty()) {
             throw new ChatValidationException("Messages array is required");
         }
@@ -80,6 +94,7 @@ public class ChatController {
         if ("user".equalsIgnoreCase(latestMessage.getRole()) && chatService.containsSensitiveData(latestMessage.getContent())) {
             logger.warn("DLP Triggered! Message contains sensitive data. Blocking message.");
             chatService.logAudit("DLP_BLOCKED", persona, latestMessage.getContent());
+            auditService.log(username, "AI_CHAT_DLP_BLOCKED", "Persona: " + persona + ", Prompt: " + latestMessage.getContent());
             throw new DlpBlockedException();
         }
 
@@ -90,6 +105,7 @@ public class ChatController {
 
         if ("user".equalsIgnoreCase(latestMessage.getRole())) {
             chatService.logAudit("PROCESSED", persona, latestMessage.getContent());
+            auditService.log(username, "AI_CHAT_PROCESSED", "Persona: " + persona + ", Prompt: " + latestMessage.getContent());
         }
 
         // Return SSE Stream

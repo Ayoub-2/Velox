@@ -34,6 +34,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/health", "/").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/kb/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/chat").permitAll()
                 .requestMatchers("/api/v1/**").authenticated()
                 .anyRequest().authenticated()
             )

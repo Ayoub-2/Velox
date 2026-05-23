@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+backend
+keycloak
+knowledge-base
+postgres_data
+velox_reports
+velox_project_docs
+velox_backups
+project-docs
+dist
+out
+.env
+.env.*

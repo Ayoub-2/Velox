@@ -31,6 +31,9 @@
   ],
   "exclude": [
     "node_modules",
-    "backend"
+    "backend",
+    "src/app/api",
+    "src/app/layout.tsx",
+    "src/lib/docs.ts"
   ]
 }

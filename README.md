@@ -1,5 +1,5 @@
 # Velox: Security by Design Knowledge Base
-![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.3-blue.svg)
 
 Welcome to the **Velox** project.
 
@@ -26,10 +26,13 @@ Welcome to the **Velox** project.
 *   **Executive Reporting**: One-click PDF export for stakeholders.
 *   **Scheduling**: Infrastructure ready for periodic assurance scans.
 
-### Phase 2.3: Intelligent Assistance
+### Phase 2.3: Intelligent Assistance & Hybrid Security (v1.4.3)
 *   **Contextual AI Assistant**: Built-in AI Chat interface with Security Personas (GRC, Pentest, Dev) providing context-aware security intelligence securely.
 *   **Global Dev Widget**: A persistent, floating widget available on all views delivering real-time DevSecOps guidance.
 *   **Real-time Streaming**: Native Server-Sent Events (SSE) support for near-instant generative text streaming.
+*   **Hybrid Authentication model**: Opened KB and Chat to the public (unauthenticated), while protecting DAST scanning and admin views.
+*   **Scan Isolation**: Enforces scan isolation, preventing users from listing, viewing, or exporting other users' scan results.
+*   **Admin Audit Portal**: Searchable/filterable Admin Portal (`/admin`) presenting DB-backed transaction audits. Restricted to Keycloak admin users.
 
 ## Knowledge Base Content
 
@@ -135,6 +138,13 @@ Velox uses a modern micro-service container architecture:
 ## 🛡️ Security Features
 - **Central Keycloak SSO**: Integrated with custom multi-issuer validation supporting both internal container-to-container and external browser-to-container network endpoints.
 - **JWT-Protected File Downloads**: Secure report exports are retrieved programmatically using AJAX/Fetch containing the OAuth2 Bearer token, preventing token exposure and authentication bypasses.
+- **Scan Ownership & Isolation**: Restricts regular users to listing, viewing, and exporting only the DAST scans they triggered. Unauthorized cross-user requests return `403 Forbidden`.
+- **Database-Backed Audit Logging**: Logs all actions (`TRIGGER_SCAN`, `EXPORT_REPORT`, `GET_SCAN`, `AI_CHAT_PROCESSED`, `AI_CHAT_DLP_BLOCKED`, `VIEW_KB`) to the Postgres database for centralized trail auditing.
+- **Double-Layered Admin Check**: Programmatically verifies Keycloak token preferred username `"admin"` and realm role `"admin"` to restrict audit log access.
+- **Client Session Purge**: Clears all local storage keys (`velox_authenticated`, `velox_access_token`, etc.) and `isAdmin` flags on client logouts to prevent session pollution.
+- **AI Chat DLP Pre-flight Check**: Intercepts chat messages and uses regular expression patterns to block leaks of sensitive keys, passwords, emails, or credit card details, recording a `DLP_BLOCKED` status to `/app/project-docs/security/ai_audit.jsonl`.
+- **Information Disclosure Mitigation**: Replaced generic 500 error propagation in the chat controller with type-safe streaming mappings (`ResponseEntity<StreamingResponseBody>`) and local exception handlers, avoiding Tomcat raw stack trace exposure.
+- **Target URL Uniqueness**: Enforced uniqueness constraints at both JPA and database-schema levels for scanned target URLs to prevent duplicate targets from generating query processing failures.
 - **Content Security Policy (CSP)**: Strict configuration preventing XSS.
 - **Security Headers**: HSTS, X-Frame-Options, Permissions-Policy.
 - **Input Validation**: Zod-based validation for all API inputs.

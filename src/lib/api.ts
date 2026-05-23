@@ -112,5 +112,11 @@ export const apiClient = {
         const res = await fetch(`${API_BASE_URL}/kb/match?q=${encodeURIComponent(query)}`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to match KB article');
         return res.json();
+    },
+
+    async getAuditLogs(): Promise<any[]> {
+        const res = await fetch(`${API_BASE_URL}/admin/audit`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('Failed to fetch audit logs');
+        return res.json();
     }
 };

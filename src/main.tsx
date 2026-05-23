@@ -14,15 +14,17 @@ const keycloak = new Keycloak({
 });
 
 keycloak.init({
-  onLoad: 'login-required',
+  onLoad: 'check-sso',
   checkLoginIframe: false,
   pkceMethod: 'S256'
 }).then((authenticated) => {
+  // Bind keycloak to window for global access
+  (window as any).keycloak = keycloak;
+
   if (authenticated) {
     console.log('✅ Keycloak authenticated successfully');
-    
-    // Store access token in localStorage for apiClient headers
     localStorage.setItem('velox_access_token', keycloak.token || '');
+    localStorage.setItem('velox_authenticated', 'true');
     
     if (keycloak.tokenParsed) {
       const preferredUsername = (keycloak.tokenParsed as any).preferred_username || '';
@@ -32,6 +34,17 @@ keycloak.init({
       localStorage.setItem('velox_user_username', preferredUsername);
       localStorage.setItem('velox_user_name', fullName);
       localStorage.setItem('velox_user_empid', employeeId);
+
+      // Check if user is Admin
+      let adminRole = false;
+      const realmAccess = (keycloak.tokenParsed as any).realm_access;
+      if (realmAccess && realmAccess.roles) {
+        adminRole = realmAccess.roles.includes('admin');
+      }
+      if (preferredUsername === 'admin') {
+        adminRole = true;
+      }
+      localStorage.setItem('isAdmin', adminRole ? 'true' : 'false');
     }
 
     // Refresh token 30 seconds before expiration
@@ -44,18 +57,23 @@ keycloak.init({
         console.error('Failed to refresh Keycloak token', err);
       });
     }, 10000);
-
-    ReactDOM.createRoot(document.getElementById('root')!).render(
-      <React.StrictMode>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </React.StrictMode>
-    );
   } else {
-    console.warn('❌ Keycloak authentication failed');
-    window.location.reload();
+    console.log('ℹ️ Keycloak running in public/unauthenticated mode');
+    localStorage.removeItem('velox_access_token');
+    localStorage.removeItem('velox_authenticated');
+    localStorage.removeItem('velox_user_username');
+    localStorage.removeItem('velox_user_name');
+    localStorage.removeItem('velox_user_empid');
+    localStorage.setItem('isAdmin', 'false');
   }
+
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>
+  );
 }).catch((err) => {
   console.error('❌ Keycloak initialization error', err);
   

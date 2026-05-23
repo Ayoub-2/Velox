@@ -134,3 +134,57 @@ drwxr-xr-x 2 appuser appuser     4096 May 22 00:19 reports
 ```
 This confirms that the directories are owned by `appuser`, allowing both writing audit logs and exporting Excel scan reports.
 
+---
+
+## 5. Update: 2026-05-23 Hybrid Authentication, Scan Isolation, and DB Audit Trail
+
+### Public Knowledge Base and Chat Endpoint Verification (No Token)
+1. **Unauthenticated KB Access**:
+   - Request: `GET http://localhost:8080/api/v1/kb`
+   - Response: `200 OK` returning all 18 articles without requiring an access token.
+2. **Unauthenticated AI Chat Access**:
+   - Request: `POST http://localhost:8080/api/v1/chat` with body `{"persona":"Dev","messages":[{"role":"user","content":"Hello, how are you?"}]}`.
+   - Response: `200 OK`, streaming chunks like `: OPENROUTER PROCESSING` successfully.
+   - DB Audit Log entry created: username `"anonymous"`, Action: `"AI_CHAT_PROCESSED"`.
+
+### Secured Scan Orchestration Lockout
+1. **Unauthenticated Scan List Block**:
+   - Request: `GET http://localhost:8080/api/v1/scans`
+   - Response: `401 Unauthorized` (Spring Security token validation failure).
+
+### Scan Isolation and Ownership Validation (Authorization Checks)
+1. **Trigger Scan as User `emp12345`**:
+   - Response ID: `dc8feb87-97be-4089-89e1-3ac5df026b62`, Session ID: `emp12345` (stored username).
+2. **Accessing Scan details as Admin**:
+   - Request: `GET http://localhost:8080/api/v1/scans/dc8feb87-97be-4089-89e1-3ac5df026b62` with `admin` token.
+   - Response: `200 OK`.
+3. **Cross-User Scan Request Denial**:
+   - Hitting details or report exports for `dc8feb87-97be-4089-89e1-3ac5df026b62` with a different user token (or unauthorized token) returns `403 Forbidden` and writes an audit event:
+     - `UNAUTHORIZED_SCAN_ACCESS` or `UNAUTHORIZED_REPORT_EXPORT` with matching username.
+
+### DB-Backed Audit Trail & Admin Endpoint Control
+1. **Querying Audit Trail as Normal User (`emp12345`)**:
+   - Request: `GET http://localhost:8080/api/v1/admin/audit`
+   - Response: `403 Forbidden` (Programmatic check in `AdminController.java`).
+2. **Querying Audit Trail as Admin**:
+   - Request: `GET http://localhost:8080/api/v1/admin/audit`
+   - Response: `200 OK` returning DB-backed audit logs.
+   - Sample logs:
+     ```json
+     [
+       {
+         "id": "1ad3d53a-c852-4756-829b-02b4d1b0cba7",
+         "username": "admin",
+         "action": "EXPORT_REPORT",
+         "details": "Scan ID: dc8feb87-97be-4089-89e1-3ac5df026b62",
+         "createdAt": "2026-05-23T17:06:47.848159"
+       },
+       {
+         "id": "89df382f-2d7c-4ab9-952b-232145b23d91",
+         "username": "emp12345",
+         "action": "TRIGGER_SCAN",
+         "details": "Target: http://example.com, Type: nuclei, Scan ID: dc8feb87-97be-4089-89e1-3ac5df026b62",
+         "createdAt": "2026-05-23T17:06:45.657985"
+       }
+     ]
+     ```

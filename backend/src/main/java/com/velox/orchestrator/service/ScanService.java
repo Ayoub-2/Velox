@@ -251,6 +251,7 @@ public class ScanService {
                 .created_at(s.getCreatedAt())
                 .options(options != null ? options : new ScanOptions())
                 .result(results)
+                .sessionId(s.getSessionId())
                 .build();
     }
 
