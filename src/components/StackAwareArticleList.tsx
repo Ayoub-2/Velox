@@ -1,6 +1,4 @@
-'use client';
-
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { useStack } from '@/lib/stack-context';
 import { DocData } from '@/lib/types';
 import { useMemo } from 'react';
@@ -100,7 +98,7 @@ export default function StackAwareArticleList({ initialDocs }: StackAwareArticle
                         return (
                             <Link
                                 key={doc.id}
-                                href={`/knowledge-base/${doc.id}`}
+                                to={`/knowledge-base/${doc.id}`}
                                 className={`flex flex-col rounded-xl border ${theme.border} bg-gray-900/50 backdrop-blur-sm p-4 sm:p-6 ${theme.hover_border} ${theme.hover_bg} transition-all duration-300 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900`}
                             >
                                 <h3 className="text-lg sm:text-xl font-bold text-gray-100 group-hover:text-white transition-colors flex items-center gap-2">

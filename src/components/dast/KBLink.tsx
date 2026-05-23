@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
+import { apiClient } from '@/lib/api';
 
 interface KBLinkProps {
     query: string;
@@ -16,8 +17,7 @@ export const KBLink: React.FC<KBLinkProps> = ({ query }) => {
         // Debounce or just fetch
         const fetchMatch = async () => {
             try {
-                const res = await fetch(`/api/kb/match?q=${encodeURIComponent(query)}`);
-                const data = await res.json();
+                const data = await apiClient.matchKbArticle(query);
                 if (data.match) {
                     setMatch(data.match);
                 }
@@ -34,7 +34,7 @@ export const KBLink: React.FC<KBLinkProps> = ({ query }) => {
     return (
         <div className="mt-2">
             <Link
-                href={match.url}
+                to={match.url}
                 target="_blank"
                 className="text-xs flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
             >

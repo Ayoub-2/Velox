@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 
 interface NavDropdownProps {
     label: string;
@@ -59,7 +59,7 @@ export default function NavDropdown({ label, items }: NavDropdownProps) {
                     {items.map((item) => (
                         <Link
                             key={item.href}
-                            href={item.href}
+                            to={item.href}
                             className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700/50 hover:text-white transition-colors"
                             onClick={() => setIsOpen(false)}
                         >

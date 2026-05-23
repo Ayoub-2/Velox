@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 // We'll import the JSON directly. In a real app, this might be fetched.
 // Note: You need to run `node scripts/extract-snippets.js` to generate this file first.
 // @ts-ignore
@@ -80,7 +80,7 @@ export default function CodeExamplesPage() {
                             <div className="p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
                                 <div>
                                     <div className="text-sm font-bold text-blue-300">{snippet.language}</div>
-                                    <Link href={`/knowledge-base/${snippet.articleId}`} className="text-xs text-slate-400 hover:text-white">
+                                    <Link to={`/knowledge-base/${snippet.articleId}`} className="text-xs text-slate-400 hover:text-white">
                                         from {snippet.articleTitle}
                                     </Link>
                                 </div>

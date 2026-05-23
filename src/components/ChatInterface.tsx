@@ -63,11 +63,21 @@ export default function ChatInterface() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      const token = localStorage.getItem('velox_access_token');
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const sid = localStorage.getItem('velox_session_id');
+      if (sid) {
+        headers['X-Session-ID'] = sid;
+      }
+
+      const response = await fetch("/api/v1/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           messages: [...messages, userMessage],
           persona,

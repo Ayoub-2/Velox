@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useNavigate, Link } from 'react-router-dom';
 import { apiClient, ScanResponse } from '@/lib/api';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -22,7 +21,7 @@ export default function DastPage() {
     const [loading, setLoading] = useState(false);
     const [msg, setMsg] = useState('');
 
-    const router = useRouter();
+    const navigate = useNavigate();
     const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
@@ -86,7 +85,7 @@ export default function DastPage() {
             setMsg(`Scan started with ID: ${result.id}`);
 
             // Unified Workflow: Redirect to results immediately
-            router.push(`/dast/${result.id}`);
+            navigate(`/dast/${result.id}`);
 
         } catch (e) {
             const err = e as Error;
@@ -337,7 +336,7 @@ export default function DastPage() {
                                 {scans.map(scan => (
                                     <tr key={scan.id} className="hover:bg-slate-800/30 transition-colors cursor-pointer group">
                                         <td className="px-6 py-4">
-                                            <Link href={`/dast/${scan.id}`} className="contents">
+                                            <Link to={`/dast/${scan.id}`} className="contents">
                                                 <span className={`
                                                     inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                                                     ${scan.status === 'completed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : ''}
@@ -350,16 +349,16 @@ export default function DastPage() {
                                             </Link>
                                         </td>
                                         <td className="px-6 py-4 text-slate-700 dark:text-slate-300 font-medium">
-                                            <Link href={`/dast/${scan.id}`}>{scan.target_url}</Link>
+                                            <Link to={`/dast/${scan.id}`}>{scan.target_url}</Link>
                                         </td>
                                         <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm capitalize">
-                                            <Link href={`/dast/${scan.id}`}>{scan.scan_type}</Link>
+                                            <Link to={`/dast/${scan.id}`}>{scan.scan_type}</Link>
                                         </td>
                                         <td className="px-6 py-4 text-slate-500 text-sm">
-                                            <Link href={`/dast/${scan.id}`}>{new Date(scan.created_at).toLocaleString()}</Link>
+                                            <Link to={`/dast/${scan.id}`}>{new Date(scan.created_at).toLocaleString()}</Link>
                                         </td>
                                         <td className="px-6 py-4 text-slate-300">
-                                            <Link href={`/dast/${scan.id}`}>
+                                            <Link to={`/dast/${scan.id}`}>
                                                 {scan.status === 'completed' && scan.result ? (
                                                     <span className="font-mono text-xs text-blue-400 hover:text-blue-300 underline decoration-blue-500/30 hover:decoration-blue-500">
                                                         {Array.isArray(scan.result) ? `${scan.result.length} Issues` : 'View Report'}

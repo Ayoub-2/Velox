@@ -1,5 +1,5 @@
 # Velox: Security by Design Knowledge Base
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)
 
 Welcome to the **Velox** project.
 
@@ -76,59 +76,65 @@ The portal will instantly become available securely at `https://[IP_OR_DOMAIN]`.
 
 ### Prerequisites
 *   Docker & Docker Compose
-*   Node.js 18+ (for frontend dev)
+*   Java 17 & Maven (for backend manual dev)
+*   Node.js 18+ (for frontend manual dev)
 
 ### Quick Start
-1.  **Clone the repo**
-2.  **Start the stack**:
+1.  **Start the Docker stack**:
     ```bash
-    docker-compose up --build
+    docker compose up --build
     ```
-    *This starts the Web Portal (8080), Orchestrator, Worker, Redis, ZAP, and Postgres.*
-3.  **Access the Dashboard**: `http://localhost:8080`
+    *This starts the Web Portal (8080), Spring Boot API (8000), Keycloak SSO (8088), DB Backup, ZAP, and Postgres.*
+2.  **Access the Dashboard**: `http://localhost:8080`
+    *Redirection to Keycloak will occur automatically. Use credentials: `admin`/`admin` or `emp12345`/`password`.*
 
-### Database Migrations
-The app auto-initializes the DB on startup for dev. For production:
-```bash
-docker-compose exec api alembic upgrade head
-```
-- **DAST Dashboard**: http://localhost:8080/dast
-- **Orchestrator API Docs**: http://localhost:8080/api/v1/docs
-- **ZAP Proxy**: (Internal to Docker Network)
+### Key Services
+- **Web Frontend**: http://localhost:8080
+- **Keycloak Console**: http://localhost:8088
+- **Spring Boot API**: http://localhost:8000
+- **ZAP Proxy Daemon**: (Internal to Docker Network on port 8090)
 
 ### Manual Development
-1.  **Frontend**:
+1.  **Frontend (React 18 / Vite SPA)**:
     ```bash
     npm install
     npm run dev
     ```
-2.  **Backend (Orchestrator)**:
+    *(Vite runs on port 3000 and proxies `/api/v1` to `http://localhost:8000`)*
+2.  **Backend (Spring Boot 3.4.2)**:
     ```bash
-    cd orchestrator
-    pip install -r requirements.txt
-    uvicorn main:app --reload
+    cd backend
+    ./mvnw spring-boot:run
     ```
-    *(Note: Manual mode requires a local Redis instance)*
 
 ## 🏗 Architecture
 
-Velox follows a hybrid architecture:
+Velox uses a modern micro-service container architecture:
 
-1.  **Frontend (Next.js)**:
-    - Static Content: Markdown-based Knowledge Base.
-    - Interactive UI: React components for Matrices, Checklists, and DAST Dashboard.
-    - PWA: Offline capabilities via `next-pwa`.
+1.  **Frontend (React 18 / Vite SPA)**:
+    - Interactive UI: Reusable React components for matrices, checklists, and DAST controls.
+    - Security: Authenticates with Keycloak via `keycloak-js`, injecting cryptographically verifiable OAuth2 Bearer tokens into backend API calls.
+    - Routing: SPA routing using `react-router-dom`.
 
-2.  **Backend (Python/FastAPI)**:
-    - **Orchestrator**: Manages security scan jobs.
-    - **Celery Worker**: Executes scans asynchronously.
-    - **Tools**: Wraps **Nuclei** (Subprocess) and **OWASP ZAP** (API).
+2.  **Backend (Java Spring Boot 3.4.2)**:
+    - **Resource Server**: Secures routes and parses user identity using spring-security-oauth2.
+    - **Scan Engine**: Handles scanning requests asynchronously (`@Async`) using `ThreadPoolTaskExecutor`.
+    - **Tool Wrappers**: Safely executes **Nuclei** CLI using `ProcessBuilder` (preventing command injection) and queries **OWASP ZAP** REST API.
+    - **Dynamic KB Rendering**: Parses knowledge-base Markdown documents into safe HTML dynamically using the **Commonmark** library.
 
 3.  **Data & State**:
-    - **Redis**: Job queue and localized caching.
-    - **LocalStorage**: User preferences (Checklist state, Theme).
+    - **Database**: PostgreSQL 17.1-alpine for scan history, stats, and metadata persistence.
+    - **LocalStorage**: Client-side context state caching (checklists, active SSO tokens).
+
+### Architecture Review & Threat Model
+*   Detailed review: [stack_migration_review.md](file:///c:/Users/Ayoub/Desktop/Projects/Velox/project-docs/analysis/stack_migration_review.md)
+*   Threat Model: [stack_migration_threat_model.md](file:///c:/Users/Ayoub/Desktop/Projects/Velox/project-docs/security/stack_migration_threat_model.md)
+*   Baseline QA Report: [qa_report_stack_migration.md](file:///c:/Users/Ayoub/Desktop/Projects/Velox/project-docs/qa/qa_report_stack_migration.md)
+*   Post-Migration QA Report: [QA_REPORT_POST_MIGRATION_FIXES.md](file:///c:/Users/Ayoub/Desktop/Projects/Velox/project-docs/qa/QA_REPORT_POST_MIGRATION_FIXES.md)
 
 ## 🛡️ Security Features
+- **Central Keycloak SSO**: Integrated with custom multi-issuer validation supporting both internal container-to-container and external browser-to-container network endpoints.
+- **JWT-Protected File Downloads**: Secure report exports are retrieved programmatically using AJAX/Fetch containing the OAuth2 Bearer token, preventing token exposure and authentication bypasses.
 - **Content Security Policy (CSP)**: Strict configuration preventing XSS.
 - **Security Headers**: HSTS, X-Frame-Options, Permissions-Policy.
 - **Input Validation**: Zod-based validation for all API inputs.

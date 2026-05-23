@@ -1,5 +1,5 @@
 'use client';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function Home() {
@@ -24,7 +24,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 w-full max-w-5xl px-2 sm:px-4">
           {/* Knowledge Base Card */}
           <Link
-            href="/knowledge-base"
+            to="/knowledge-base"
             className="group relative rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 p-6 sm:p-8 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -38,7 +38,7 @@ export default function Home() {
 
           {/* DAST Orchestrator (Phase 2) */}
           <Link
-            href="/dast"
+            to="/dast"
             className="group relative rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 p-6 sm:p-8 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -52,7 +52,7 @@ export default function Home() {
 
           {/* Analytics (Phase 3 - Now Live) */}
           <Link
-            href="/dast" // Link to DAST dashboard for analytics
+            to="/dast" // Link to DAST dashboard for analytics
             className="group relative rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 p-6 sm:p-8 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>

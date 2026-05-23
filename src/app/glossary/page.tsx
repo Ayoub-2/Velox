@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { glossaryTerms } from '@/data/glossary';
 
 export default function GlossaryPage() {
@@ -81,7 +81,7 @@ export default function GlossaryPage() {
                                         </p>
                                         {term.link && (
                                             <Link
-                                                href={term.link}
+                                                to={term.link}
                                                 className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"
                                             >
                                                 Learn more &rarr;

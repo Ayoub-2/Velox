@@ -33,3 +33,22 @@ This document outlines the security posture, threat model, and mitigations for t
 
 ## 5. Residual Risks & Uncertainties
 - Because LLMs are non-deterministic, zero-day prompt injection techniques might still bypass limitations. We rely heavily on the base model's safety alignment (e.g. Gemini 2.5 Pro safety filters).
+
+---
+
+## 6. Update: 2026-05-23 Java Spring Boot Migration Security Review
+
+### Scope
+- `backend/src/main/java/com/velox/orchestrator/controller/ChatController.java` (Java Controller)
+- `backend/src/main/java/com/velox/orchestrator/service/ChatService.java` (Java Service)
+- DLP Rules & Audit Logging integration (`/app/project-docs/security/ai_audit.jsonl`)
+
+### High-Risk Change Self-Review & Threat Analysis
+1. **DLP Pre-flight Bypass**: If a user bypasses client-side validation, the backend must block requests containing sensitive information (PII, secrets) before forwarding to OpenRouter.
+   - *Attack vector*: Sending raw API keys, passwords, or credit card numbers in the `messages` array.
+   - *Mitigation*: Backend implements `ChatService#containsSensitiveData` checking regex patterns for emails, credit cards, and credentials before processing. If triggered, it logs `DLP_BLOCKED` to the audit log and immediately aborts the LLM request.
+2. **Audit Log Inaccessibility (Denial of Audit)**: The backend runs as a non-root `appuser`. If the directory for the audit log (`/app/project-docs/security/`) is not writable by `appuser` (e.g. if mounted as root-owned), audit log entries would fail to write.
+   - *Mitigation*: The `Dockerfile` has been updated to pre-create and `chown -R appuser:appuser` the `/app/project-docs` and `/app/reports` directories. This ensures audit writing succeeds. The code catches `IOException` safely to prevent complete service denial, while logging the error.
+3. **Information Disclosure via 500 Responses**: When Spring MVC is unable to write responses, it might throw a generic `HttpMessageNotWritableException` which Tomcat formats as a HTML/JSON error containing internal lambda information or server state.
+   - *Mitigation*: We changed the controller method return type to `ResponseEntity<StreamingResponseBody>` and introduced specific local exception classes (`ChatValidationException`, `ChatConfigurationException`, `DlpBlockedException`) and `@ExceptionHandler` methods to format errors cleanly. No internal stack traces are returned to clients.
+

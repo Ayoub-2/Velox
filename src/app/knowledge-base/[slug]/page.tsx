@@ -1,12 +1,9 @@
-import { getAllDocIds, getDocData } from '@/lib/docs';
-import Link from 'next/link';
+'use client';
 
-export const dynamic = 'force-dynamic';
-
-export async function generateStaticParams() {
-    const paths = getAllDocIds();
-    return paths;
-}
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { DocData } from '@/lib/types';
+import { apiClient } from '@/lib/api';
 
 const getCategoryTheme = (category: string) => {
     const themes: Record<string, { bg: string, text: string, border: string, gradient: string, badge_bg: string, badge_text: string, badge_border: string }> = {
@@ -59,15 +56,55 @@ const getCategoryTheme = (category: string) => {
     return themes[category] || themes['Authorization']; // Default
 };
 
-export default async function Doc({ params }: { params: Promise<{ slug: string }> }) {
-    const resolvedParams = await params;
-    const postData = await getDocData(resolvedParams.slug);
+export default function Doc() {
+    const { slug } = useParams();
+    const [postData, setPostData] = useState<DocData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!slug) return;
+
+        const fetchDoc = async () => {
+            try {
+                const data = await apiClient.getKbArticle(slug);
+                setPostData(data);
+            } catch (e) {
+                setError(e instanceof Error ? e.message : 'Failed to load article');
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDoc();
+    }, [slug]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
+
+    if (error || !postData) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+                <h2 className="text-xl font-bold text-red-500 mb-4">{error || 'Article not found'}</h2>
+                <Link to="/knowledge-base" className="text-blue-400 hover:text-blue-300">
+                    &larr; Back to Knowledge Base
+                </Link>
+            </div>
+        );
+    }
+
     const theme = getCategoryTheme(postData.category || 'Authorization');
 
     return (
         <div className={`min-h-screen bg-gradient-to-b ${theme.bg} text-white py-12 px-4 sm:px-6 lg:px-8`}>
             <div className="max-w-7xl mx-auto">
-                <Link href="/knowledge-base" className={`inline-flex items-center text-sm ${theme.text} hover:opacity-80 transition-opacity mb-8 group`}>
+                <Link to="/knowledge-base" className={`inline-flex items-center text-sm ${theme.text} hover:opacity-80 transition-opacity mb-8 group`}>
                     <span className="group-hover:-translate-x-1 transition-transform mr-2">&larr;</span>
                     Back to Knowledge Base
                 </Link>

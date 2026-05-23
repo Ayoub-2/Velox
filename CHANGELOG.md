@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.2] - 2026-05-23 (Target Duplication & Chat Return 500 Fixes)
+
+### Added
+- **Local Exception Handlers in ChatController**: Added custom exceptions (`ChatValidationException`, `ChatConfigurationException`, and `DlpBlockedException`) and associated `@ExceptionHandler` methods to format clean JSON error payloads.
+- **Docker Volume Pre-creation**: Updated the backend `Dockerfile` to pre-create and set write permissions (chown to `appuser`) on the `/app/project-docs` and `/app/reports` directories.
+
+### Changed
+- **Chat Controller Method Return Type**: Refactored `ChatController#chat` return type from `ResponseEntity<?>` to `ResponseEntity<StreamingResponseBody>`. This allows Spring Boot to correctly resolve the streaming body and bypass the message converter search.
+- **Unique Database Constraint on Target URL**: Added the unique constraint `unique_target_url` on the target `url` column in `Target.java` to prevent duplicate URLs from being registered.
+- **Repository Safe Queries**: Updated `TargetRepository.java` to search with `findFirstByUrl` instead of `findByUrl`, ensuring scan initiation is safe even if duplicate URLs exist.
+
+### Security Impact
+- **No Information Disclosure on Chat Errors**: Bypassed standard serialization errors (`HttpMessageNotWritableException`) which could leak backend class names and lambda representations via Tomcat 500 responses.
+- **Secured and Functioning AI Audit Logging**: Resolved the permission issues that blocked writing audit logs, ensuring all DLP triggers (`DLP_BLOCKED`) and chat prompts (`PROCESSED`) are successfully logged inside the container volume.
+
+## [1.4.1] - 2026-05-22 (Post-Migration Integration & Security Fixes)
+
+### Added
+- **Relaxed Multi-Issuer Validation**: Added custom `JwtDecoder` in `SecurityConfig.java` to support OAuth2 tokens issued under both internal container and browser-facing domain names.
+- **Node.js Production Proxy**: Integrated a lightweight native HTTP proxy in `server.js` forwarding `/api/*` traffic to the backend `api:8000` container.
+- **QA & Threat Model Updates**: Created [QA_REPORT_POST_MIGRATION_FIXES.md](file:///c:/Users/Ayoub/Desktop/Projects/Velox/project-docs/qa/QA_REPORT_POST_MIGRATION_FIXES.md) and appended threat modeling for proxying and report downloads to [stack_migration_threat_model.md](file:///c:/Users/Ayoub/Desktop/Projects/Velox/project-docs/security/stack_migration_threat_model.md).
+
+### Changed
+- **JWT-Protected File Downloads**: Refactored the scan export button in `src/app/dast/[id]/page.tsx` from a direct browser redirect to a secure, token-authorized programmatic blob fetch.
+- **Authenticated Page and Chat Requests**: Refactored page routes under `/knowledge-base` and the persistent chat interfaces to execute API requests using the authenticated `apiClient` wrapper.
+
+### Security Impact
+- **Eliminated Bypass Vulnerabilities**: Enforced Bearer JWT checks on all scan report exports, preventing unauthenticated access via direct links.
+- **Secure Reverse Proxying**: Hardcoded reverse proxying strictly to the backend API container, preventing SSRF open proxy abuse.
+
+## [1.4.0] - 2026-05-21 (Spring Boot & Keycloak Migration)
+
+### Added
+- **Spring Boot Backend API**: Replaced Python FastAPI with a new Java Spring Boot 3.4.2 REST API including custom controllers for Scans, Targets, Stats, Knowledge Base, and AI Chat.
+- **Keycloak SSO Integration**: Configured a public frontend client and realm support to authenticate users using Employee ID, including token verification and automatic refresh.
+- **Vite SPA & React 18 Frontend**: Migrated the user interface from Next.js server-side framework to a client-side Vite single-page application.
+- **Async Execution Framework**: Replaced Redis/Celery queue with Spring Boot's `@Async` execution for managing DAST scan jobs.
+- **QA & Threat Model Documentation**: Generated threat model at [stack_migration_threat_model.md](file:///c:/Users/Ayoub/Desktop/Projects/Velox/project-docs/security/stack_migration_threat_model.md) and QA report at [qa_report_stack_migration.md](file:///c:/Users/Ayoub/Desktop/Projects/Velox/project-docs/qa/qa_report_stack_migration.md).
+
+### Changed
+- **Database Service**: Upgraded PostgreSQL container image to `postgres:17.1-alpine`.
+- **API and KB Fetching**: Refactored frontend pages (`/knowledge-base` and `/dast`) to query endpoints on the Spring Boot backend instead of local filesystem reads.
+
+### Fixed
+- **HtmlRenderer Import**: Corrected the incorrect `HtmlRenderer` package import in `KbService.java` to point to `org.commonmark.renderer.html.HtmlRenderer` for successful Maven compilation.
+- **Windows Docker Host Mounts**: Replaced host directory mounts with named Docker volumes (`velox_reports`, `velox_project_docs`, `velox_backups`) and baked static config/assets (`realm.json`, `ssl_proxy.js`, `knowledge-base`, `certs`) directly into the custom Docker images to resolve Windows host mount issues.
+
+### Security Impact
+- **Enterprise Authenticator**: Replaced session cookies with cryptographically verified OAuth2 JWTs issued by Keycloak.
+- **Command Injection Prevention**: Rewrote Nuclei execution wrapper to use array-based `ProcessBuilder` without spawning a shell interpreter.
+
 ## [1.3.0] - 2026-04-19 (AI Chat Widget & Streaming)
 
 ### Added

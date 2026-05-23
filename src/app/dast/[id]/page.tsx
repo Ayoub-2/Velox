@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useParams, Link } from 'react-router-dom';
 import { apiClient, ScanResponse } from '@/lib/api';
 import { Scorecard } from '@/components/dast/Scorecard';
 import { KBLink } from '@/components/dast/KBLink';
@@ -11,9 +10,7 @@ export default function ScanDetailsPage() {
     const params = useParams();
     const id = params?.id as string;
 
-    const API_BASE = (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_API_URL && process.env.NEXT_PUBLIC_API_URL !== 'undefined')
-        ? process.env.NEXT_PUBLIC_API_URL
-        : '/api/v1';
+    const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
     const buildApiUrl = (path: string) => `${API_BASE.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
 
     const [scan, setScan] = useState<ScanResponse | null>(null);
@@ -29,18 +26,40 @@ export default function ScanDetailsPage() {
     // Auto-Download Effect
     useEffect(() => {
         if (scan?.status === 'completed' && scan.result && !localStorage.getItem(`downloaded_${scan.id}`)) {
-            const downloadUrl = buildApiUrl(`/scans/${scan.id}/export`);
-
             // Allow time for component to render "Completed" state visually before redirecting/downloading
             const timer = setTimeout(() => {
-                // Use invisible iframe or window location
-                window.location.href = downloadUrl;
+                downloadReport(scan.id);
                 localStorage.setItem(`downloaded_${scan.id}`, 'true');
             }, 1000);
 
             return () => clearTimeout(timer);
         }
     }, [scan?.status, scan?.id]);
+
+    const downloadReport = async (scanId: string) => {
+        try {
+            const token = localStorage.getItem('velox_access_token');
+            const headers: Record<string, string> = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            const res = await fetch(buildApiUrl(`/scans/${scanId}/export`), {
+                headers
+            });
+            if (!res.ok) throw new Error('Failed to download report');
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `scan_report_${scanId}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('Error downloading report:', e);
+        }
+    };
 
     const loadScan = async (scanId: string) => {
         try {
@@ -66,7 +85,7 @@ export default function ScanDetailsPage() {
         return (
             <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
                 <h2 className="text-xl font-bold text-red-500 mb-4">{error || 'Scan not found'}</h2>
-                <Link href="/dast" className="text-blue-400 hover:text-blue-300">
+                <Link to="/dast" className="text-blue-400 hover:text-blue-300">
                     &larr; Back to Dashboard
                 </Link>
             </div>
@@ -91,7 +110,7 @@ export default function ScanDetailsPage() {
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <Link href="/dast" className="text-slate-400 hover:text-white mb-4 inline-block transition-colors">
+                    <Link to="/dast" className="text-slate-400 hover:text-white mb-4 inline-block transition-colors">
                         &larr; Back to Scans
                     </Link>
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -109,17 +128,15 @@ export default function ScanDetailsPage() {
                                 </div>
 
                                 {scan.status === 'completed' && scan.result && scan.result.length > 0 && (
-                                        <a
-                                        href={buildApiUrl(`/scans/${scan.id}/export`)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-lg shadow-emerald-900/20"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                                        </svg>
-                                        Download Report
-                                    </a>
+                                        <button
+                                            onClick={() => downloadReport(scan.id)}
+                                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-lg shadow-emerald-900/20"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                            </svg>
+                                            Download Report
+                                        </button>
                                 )}
                             </div>
                         </div>

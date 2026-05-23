@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
     return (
@@ -18,13 +18,13 @@ export default function Footer() {
                         aria-label="Footer links"
                     >
                         <Link 
-                            href="/" 
+                            to="/" 
                             className="text-sm text-slate-400 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
                         >
                             Home
                         </Link>
                         <Link 
-                            href="/knowledge-base" 
+                            to="/knowledge-base" 
                             className="text-sm text-slate-400 hover:text-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
                         >
                             Knowledge Base

@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, useLocation } from 'react-router-dom';
 import StackSelector from '@/components/StackSelector';
 import NavDropdown from '@/components/NavDropdown';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -9,7 +8,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function Navbar() {
-    const pathname = usePathname();
+    const location = useLocation();
+    const pathname = location.pathname;
     const showStackSelector = pathname?.startsWith('/knowledge-base');
     const { t } = useLanguage();
 
@@ -23,7 +23,7 @@ export default function Navbar() {
                 <div className="flex h-16 items-center justify-between">
                     <div className="flex items-center gap-8">
                         <Link
-                            href="/"
+                            to="/"
                             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                             aria-label="Velox home"
                         >
@@ -32,7 +32,7 @@ export default function Navbar() {
                         </Link>
                         <div className="hidden md:flex gap-6 items-center">
                             <Link
-                                href="/knowledge-base"
+                                to="/knowledge-base"
                                 className={`text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 ${pathname?.startsWith('/knowledge-base') ? 'text-white' : 'text-slate-300 hover:text-white'}`}
                                 aria-label={t('navbar.kb')}
                             >
@@ -50,14 +50,14 @@ export default function Navbar() {
                             />
 
                             <Link
-                                href="/dast"
+                                to="/dast"
                                 className={`text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 ${pathname?.startsWith('/dast') ? 'text-white' : 'text-slate-300 hover:text-white'}`}
                             >
                                 {t('navbar.scans')}
                             </Link>
                             
                             <Link
-                                href="/chat"
+                                to="/chat"
                                 className={`text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 rounded px-2 py-1 ${pathname?.startsWith('/chat') ? 'text-teal-400' : 'text-slate-300 hover:text-teal-400'}`}
                             >
                                 AI Assistant

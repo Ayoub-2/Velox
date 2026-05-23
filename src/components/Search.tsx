@@ -1,8 +1,5 @@
-'use client';
-
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { DocData } from '@/lib/types';
 import { useStack } from '@/lib/stack-context';
 
@@ -15,7 +12,6 @@ export default function Search({ docs }: SearchProps) {
     const [selectedCategory, setSelectedCategory] = useState('All');
 
     const { selectedStack } = useStack();
-    const router = useRouter();
 
     // Extract unique categories from docs
     const categories = useMemo(() => {
@@ -102,7 +98,7 @@ export default function Search({ docs }: SearchProps) {
                             {filteredDocs.map((doc) => (
                                 <Link
                                     key={doc.id}
-                                    href={`/knowledge-base/${doc.id}`}
+                                    to={`/knowledge-base/${doc.id}`}
                                     className="block px-4 py-3 hover:bg-white/5 transition-colors group"
                                 >
                                     <div className="flex justify-between items-start">

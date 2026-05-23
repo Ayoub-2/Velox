@@ -18,7 +18,7 @@ export interface ScanResponse {
     options?: any;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 // Session Management (Client-Side Only)
 const getSessionId = () => {
@@ -36,6 +36,10 @@ const getHeaders = (base: Record<string, string> = {}) => {
     const sid = getSessionId();
     if (sid) {
         headers['X-Session-ID'] = sid;
+    }
+    const token = localStorage.getItem('velox_access_token');
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
 };
@@ -89,6 +93,24 @@ export const apiClient = {
     async getFindingTrend(days: number = 7): Promise<any[]> {
         const res = await fetch(`${API_BASE_URL}/stats/trend?days=${days}`, { headers: getHeaders() });
         if (!res.ok) throw new Error('Failed to fetch trend');
+        return res.json();
+    },
+
+    async getKbArticles(): Promise<any[]> {
+        const res = await fetch(`${API_BASE_URL}/kb`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('Failed to fetch KB articles');
+        return res.json();
+    },
+
+    async getKbArticle(slug: string): Promise<any> {
+        const res = await fetch(`${API_BASE_URL}/kb/${slug}`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('Failed to fetch KB article');
+        return res.json();
+    },
+
+    async matchKbArticle(query: string): Promise<any> {
+        const res = await fetch(`${API_BASE_URL}/kb/match?q=${encodeURIComponent(query)}`, { headers: getHeaders() });
+        if (!res.ok) throw new Error('Failed to match KB article');
         return res.json();
     }
 };

@@ -1,9 +1,8 @@
 services:
-  # Frontend (Next.js) - Production Standalone
+  # Frontend (Vite SPA) - Production Standalone
   web:
     build:
       context: .
-      target: runner
       args:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
@@ -25,109 +24,68 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
     depends_on:
       - api
-    volumes:
-      # Dynamic Knowledge Base Content (Read-Only)
-      - ./knowledge-base:/app/knowledge-base:ro
-      # SSL Integration (No Rebuild)
-      - ./scripts/ssl_proxy.js:/app/ssl_proxy.js:ro
-      - ./certs:/app/certs:ro
-      # Backend (FastAPI + Nuclei)
+
+  # Backend (Java Spring Boot + Nuclei)
   api:
     build:
-      context: ./orchestrator
+      context: .
+      dockerfile: ./backend/Dockerfile
       args:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
         NO_PROXY: ${NO_PROXY}
-    command: |
-      sh -c "
-      nuclei -ut > /tmp/nuclei_update.log 2>&1 &
-      exec uvicorn main:app --host 0.0.0.0 --port 8000
-      "
-
     dns:
       - ${VELOX_INTERNAL_DNS:-8.8.8.8}
       - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - DB_HOST=db
+      - DB_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/velox
+      - KEYCLOAK_JWK_SET_URI=http://keycloak:8080/realms/velox/protocol/openid-connect/certs
       - ZAP_URL=http://zap:8090
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - KB_DIRECTORY=/app/knowledge-base
+      - AUDIT_LOG_PATH=/app/project-docs/security/ai_audit.jsonl
       - HTTP_PROXY=${HTTP_PROXY}
       - HTTPS_PROXY=${HTTPS_PROXY}
       - NO_PROXY=${NO_PROXY}
     depends_on:
-      redis:
-        condition: service_healthy
       db:
         condition: service_healthy
+      keycloak:
+        condition: service_healthy
     volumes:
-      # Reports Persistence
-      - ./reports:/app/reports
-      # SSL Certificates (Optional)
-      - ./certs:/app/certs:ro
-      # Code patch (No Rebuild)
-      - ./orchestrator/tools/nuclei.py:/app/tools/nuclei.py:ro
-      - ./orchestrator/routers/scans.py:/app/routers/scans.py:ro
-      - ./orchestrator/utils/report_gen.py:/app/utils/report_gen.py:ro
+      # Reports & Audits Persistence (Named Volumes to avoid host mount issues)
+      - velox_reports:/app/reports
+      - velox_project_docs:/app/project-docs
 
-  # Worker (Celery)
-  worker:
+  # Keycloak SSO Server
+  keycloak:
     build:
-      context: ./orchestrator
-      args:
-        HTTP_PROXY: ${HTTP_PROXY}
-        HTTPS_PROXY: ${HTTPS_PROXY}
-        NO_PROXY: ${NO_PROXY}
-    command: sh -c "nuclei -ut > /tmp/nuclei_worker_update.log 2>&1 & exec celery -A celery_app worker --loglevel=info"
-    dns:
-      - ${VELOX_INTERNAL_DNS:-8.8.8.8}
-      - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
+      context: ./keycloak
+    command: start-dev --import-realm
+    ports:
+      - "8088:8080"
     environment:
-      - REDIS_URL=redis://redis:6379/0
-      - ZAP_URL=http://zap:8090
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - HTTP_PROXY=${HTTP_PROXY}
-      - HTTPS_PROXY=${HTTPS_PROXY}
-      - NO_PROXY=${NO_PROXY}
-    depends_on:
-      redis:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-    volumes:
-      - ./orchestrator/tools/nuclei.py:/app/tools/nuclei.py:ro
-
-  # Periodic Task Scheduler (Celery Beat)
-  beat:
-    build:
-      context: ./orchestrator
-      args:
-        HTTP_PROXY: ${HTTP_PROXY}
-        HTTPS_PROXY: ${HTTPS_PROXY}
-        NO_PROXY: ${NO_PROXY}
-    command: celery -A celery_app beat --loglevel=info --schedule /tmp/celerybeat-schedule
-    dns:
-      - ${VELOX_INTERNAL_DNS:-8.8.8.8}
-      - ${VELOX_INTERNAL_DNS_SECONDARY:-8.8.4.4}
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-    depends_on:
-      redis:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-    volumes:
-      - ./orchestrator/tools/nuclei.py:/app/tools/nuclei.py:ro
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/realms/velox || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # DB Backup Service (Auto-Archive)
   db-backup:
-    image: postgres:15-alpine
+    image: postgres:17.1-alpine
     container_name: velox-db-backup
     environment:
       - PGPASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      - ./backups:/backups
+      - velox_backups:/backups
     command: >
       sh -c ' echo "Starting DB Backup Service..."; while true; do
         echo "Creating backup...";
@@ -141,18 +99,9 @@ services:
       db:
         condition: service_healthy
 
-  # Job Queue Broker
-  redis:
-    image: redis:7-alpine
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   # Database
   db:
-    image: postgres:15-alpine
+    image: postgres:17.1-alpine
     restart: always
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -181,3 +130,6 @@ services:
 
 volumes:
   postgres_data:
+  velox_reports:
+  velox_project_docs:
+  velox_backups:
